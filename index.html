@@ -646,13 +646,13 @@
 // Auto-detect proxy location
 // file:// opened directly = use localhost
 // served via server.js = use same hostname as page
-const PROXY_HOST = (window.location.protocol === 'file:' ||
+const IS_LOCAL = (window.location.protocol === 'file:' ||
   window.location.hostname === '' ||
   window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1')
-  ? 'localhost'
-  : window.location.hostname;
-const PROXY = 'http://' + PROXY_HOST + ':3001/';
+  window.location.hostname === '127.0.0.1');
+const PROXY = IS_LOCAL
+  ? 'http://localhost:3001/'
+  : 'https://formlab-proxy-production.up.railway.app/';
 const PF_BASE = 'https://api.puntingform.com.au/v2/form';
 const BF_API = 'https://api.betfair.com/exchange/betting/json-rpc/v1';
 const BF_AUTH = 'https://identitysso-cert.betfair.com/api/login';
