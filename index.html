@@ -1749,7 +1749,7 @@ function getTier(ev, score) {
 let saturdayBetPool = [];
 let manualPins = []; // manually pinned horses added to bet pool night-before
 
-function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo) {
+function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo, odds) {
   const key = venueName + '_R' + raceNum + '_' + runnerId;
   const idx = manualPins.findIndex(p => p.key === key);
   if (idx >= 0) {
@@ -1765,7 +1765,7 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
     showToast(runnerName + ' removed from picks', '');
   } else {
     manualPins.push({
-      key, runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo,
+      key, runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo, odds,
       pinnedAt: new Date().toISOString()
     });
     // Log directly to results tracker with TBC odds
@@ -1789,7 +1789,7 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
         runnerId: runnerId,
         tier: 'A',
         betType: 'WIN',
-        odds: 0, // TBC — update when price available
+        odds: odds || 0, // live odds at time of pinning
         stake: config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 10,
         ev: 0,
         result: null,
@@ -2787,12 +2787,14 @@ function renderMain(race, runners) {
                       title="${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? 'Unpin from bet list' : 'Pin to bet list'; })()}"
                       onclick="toggleManualPin(
                         '${r.runnerId||r.runnerNumber||i}',
-                        '${(r.runnerName||r.name||'Unknown').replace(/'/g,"\\'")}',
-                        '${(race.name||'').replace(/'/g,"\\'")}',
-                        '${(race.venueName||'').replace(/'/g,"\\'")}',
+                        '${(r.runnerName||r.name||String.fromCharCode(85,110,107,110,111,119,110)).replace(/'/g,String.fromCharCode(92,39))}',
+                        '${(race.name||'').replace(/'/g,String.fromCharCode(92,39))}',
+                        '${(race.venueName||'').replace(/'/g,String.fromCharCode(92,39))}',
                         '${race.number||race.raceNumber||''}',
                         ${(r.algoScore||0).toFixed(1)},
-                        ${(r.scoreGap||0).toFixed(1)}
+                        ${(r.scoreGap||0).toFixed(1)},
+                        ${r.tabNo||r.runnerNumber||0},
+                        ${r.bfOdds||0}
                       )">${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? '📌' : '📍'; })()}</button>
                   </div>
                   <div class="runner-jockey">${r.jockeyName || r.jockey || ''} · ${r.trainerName || r.trainer || ''}</div>
