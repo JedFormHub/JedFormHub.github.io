@@ -705,8 +705,15 @@ const server = http.createServer(async (req, res) => {
 
   const reqUrl = url.parse(req.url);
 
-  // ── GET /config — supply API keys to viewer (no secrets exposed, keys stay server-side via proxy) ──
-  if (reqUrl.pathname === '/config') {
+  const pathname = reqUrl.pathname.replace(/^\//, ''); // strip leading slash
+
+  // ── GET /config — supply API keys to viewer ──────────────────────────────
+  if (pathname === 'config' || pathname === '') {
+    if (pathname === '') {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('Form Lab Proxy — OK');
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       pfKey:     PF_KEY,
@@ -717,8 +724,8 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // ── GET /results — download CSV ──────────────────────────────────────────
-  if (reqUrl.pathname === '/results') {
+  // ── GET /results ─────────────────────────────────────────────────────────
+  if (pathname === 'results') {
     const now   = aestNow();
     const month = now.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', year: 'numeric', month: 'long' });
     const csv   = loadCSV();
@@ -731,7 +738,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── GET /scan — manual trigger ────────────────────────────────────────────
-  if (reqUrl.pathname === '/scan') {
+  if (pathname === 'scan') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'Scanner started', time: aestNow().toISOString() }));
     runScanner().catch(e => console.error('[MANUAL SCAN] Error:', e.message));
@@ -739,7 +746,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── GET /settle — manual settle trigger ───────────────────────────────────
-  if (reqUrl.pathname === '/settle') {
+  if (pathname === 'settle') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'Settler started', time: aestNow().toISOString() }));
     runSettler().catch(e => console.error('[MANUAL SETTLE] Error:', e.message));
@@ -747,7 +754,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── GET /status — health check ────────────────────────────────────────────
-  if (reqUrl.pathname === '/status') {
+  if (pathname === 'status') {
     const csv   = loadCSV();
     const bets  = csv.split('\n').filter(l => l.trim() && !l.startsWith('Date')).length;
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -763,9 +770,9 @@ const server = http.createServer(async (req, res) => {
 
   // ── PROXY — forward all other requests ───────────────────────────────────
   const targetUrl = req.url.slice(1);
-  if (!targetUrl) {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Form Lab Proxy — OK');
+  if (!targetUrl || targetUrl === 'config' || targetUrl === 'results' || targetUrl === 'scan' || targetUrl === 'settle' || targetUrl === 'status') {
+    res.writeHead(400);
+    res.end('Bad request');
     return;
   }
 
