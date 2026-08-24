@@ -1749,7 +1749,7 @@ function getTier(ev, score) {
 let saturdayBetPool = [];
 let manualPins = []; // manually pinned horses added to bet pool night-before
 
-function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo, odds) {
+function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo) {
   const key = venueName + '_R' + raceNum + '_' + runnerId;
   const idx = manualPins.findIndex(p => p.key === key);
   if (idx >= 0) {
@@ -1765,7 +1765,7 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
     showToast(runnerName + ' removed from picks', '');
   } else {
     manualPins.push({
-      key, runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo, odds,
+      key, runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo,
       pinnedAt: new Date().toISOString()
     });
     // Log directly to results tracker with TBC odds
@@ -1789,7 +1789,7 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
         runnerId: runnerId,
         tier: 'A',
         betType: 'WIN',
-        odds: odds || 0, // live odds at time of pinning
+        odds: 0, // TBC — update when price available
         stake: config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 10,
         ev: 0,
         result: null,
@@ -2787,14 +2787,12 @@ function renderMain(race, runners) {
                       title="${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? 'Unpin from bet list' : 'Pin to bet list'; })()}"
                       onclick="toggleManualPin(
                         '${r.runnerId||r.runnerNumber||i}',
-                        '${(r.runnerName||r.name||String.fromCharCode(85,110,107,110,111,119,110)).replace(/'/g,String.fromCharCode(92,39))}',
-                        '${(race.name||'').replace(/'/g,String.fromCharCode(92,39))}',
-                        '${(race.venueName||'').replace(/'/g,String.fromCharCode(92,39))}',
+                        '${(r.runnerName||r.name||'Unknown').replace(/'/g,"\\'")}',
+                        '${(race.name||'').replace(/'/g,"\\'")}',
+                        '${(race.venueName||'').replace(/'/g,"\\'")}',
                         '${race.number||race.raceNumber||''}',
                         ${(r.algoScore||0).toFixed(1)},
-                        ${(r.scoreGap||0).toFixed(1)},
-                        ${r.tabNo||r.runnerNumber||0},
-                        ${r.bfOdds||0}
+                        ${(r.scoreGap||0).toFixed(1)}
                       )">${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? '📌' : '📍'; })()}</button>
                   </div>
                   <div class="runner-jockey">${r.jockeyName || r.jockey || ''} · ${r.trainerName || r.trainer || ''}</div>
@@ -3260,7 +3258,6 @@ document.getElementById('satTop10Btn').addEventListener('click', function() {
 document.getElementById('closeSatTop10').addEventListener('click', function() {
   document.getElementById('satTop10Overlay').classList.add('hidden');
 });
-document.getElementById('debugBtn').addEventListener('click', debugAPI);
 
 // ─── DEBUG ──────────────────────────────────────────────────
 async function debugAPI() {
@@ -4190,8 +4187,6 @@ async function runBFDiagnostics() {
     '</pre></div>';
 }
 
-document.getElementById('autoScanBtn').addEventListener('click', toggleAutoScan);
-document.getElementById('bfDiagBtn').addEventListener('click', runBFDiagnostics);
 document.getElementById('discordSummaryBtn').addEventListener('click', sendDiscordDailySummary);
 
 // Set date picker to today by default
