@@ -206,9 +206,10 @@ async function lbRaceOdds(eventId) {
 async function fetchFF(endpoint, params) {
   if (!FF_KEY) return null;
   try {
-    let u = FF_BASE + endpoint + '?api_key=' + FF_KEY;
-    Object.entries(params || {}).forEach(([k,v]) => { u += '&' + k + '=' + encodeURIComponent(v); });
-    return await fetchJSON(u);
+    let u = FF_BASE + endpoint + '?';
+    Object.entries(params || {}).forEach(([k,v]) => { u += k + '=' + encodeURIComponent(v) + '&'; });
+    u = u.replace(/&$/, '');
+    return await fetchJSON(u, { 'x-api-key': FF_KEY, 'accept': 'application/json' });
   } catch(e) {
     console.warn('FF error:', e.message);
     return null;
@@ -218,7 +219,11 @@ async function fetchFF(endpoint, params) {
 async function fetchFFRace(venueName, raceNum, raceDate) {
   const track = venueName.replace(/\s*(Scarpside|Lakeside|Hillside|Heath|Acton|Kensington|Parks)\s*/gi, ' ').trim();
   const data = await fetchFF('/form', { country: 'au', track, race: String(raceNum), date: raceDate });
-  if (!data || !data.runners) return null;
+  if (!data || !data.runners) {
+    console.log(`[FF] No data for ${track} R${raceNum} ${raceDate}`);
+    return null;
+  }
+  console.log(`[FF] ${track} R${raceNum}: ${data.runners.length} runners loaded`);
   return data;
 }
 
@@ -524,6 +529,8 @@ async function runScanner() {
 
       // Check top runner
       const top = runners[0];
+      const second = runners[1];
+      console.log(`[SCORE] ${venue} R${raceNum}: #1 ${top?.runnerName} score:${top?.algoScore} odds:$${top?.bfOdds} gap:${top && second ? (top.algoScore - (second?.algoScore||0)).toFixed(1) : 'n/a'} minGap:${getMinGap(venue, dayName)}`);
       if (!top || !top.bfOdds || top.bfOdds < 1.3) continue;
 
       const scoreGap = getScoreGap(runners, top);
@@ -697,6 +704,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   const reqUrl = url.parse(req.url);
+
+  // ── GET /config — supply API keys to viewer (no secrets exposed, keys stay server-side via proxy) ──
+  if (reqUrl.pathname === '/config') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      pfKey:     PF_KEY,
+      ffKey:     FF_KEY,
+      lbFrom:    LB_FROM,
+      lbPartner: LB_PARTNER
+    }));
+    return;
+  }
 
   // ── GET /results — download CSV ──────────────────────────────────────────
   if (reqUrl.pathname === '/results') {
