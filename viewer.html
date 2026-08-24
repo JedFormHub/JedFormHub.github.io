@@ -1,0 +1,4229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Lab — AU Racing Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #191d24;
+    --surface3: #1f2430;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --text2: #8b90a0;
+    --text3: #555a6a;
+    --gold: #f0b429;
+    --gold2: #ffd066;
+    --green: #2ecc8a;
+    --red: #f05252;
+    --blue: #4a9eff;
+    --purple: #9b7fff;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--gold);
+  }
+  .logo span { color: var(--text2); font-size: 13px; font-family: 'DM Mono', monospace; margin-left: 12px; letter-spacing: 0; vertical-align: middle; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); display: inline-block; }
+  .status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .status-label { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .btn { padding: 8px 16px; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .btn:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-primary { background: var(--gold); color: #0a0c0f; border-color: var(--gold); font-weight: 600; }
+  .btn-primary:hover { background: var(--gold2); color: #0a0c0f; }
+
+  /* LAYOUT */
+  .app { display: flex; height: calc(100vh - 57px); }
+  .sidebar { width: 260px; min-width: 260px; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+  .main { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* SIDEBAR */
+  .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-header h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text3); font-weight: 500; }
+  .date-display { font-size: 13px; color: var(--text2); margin-top: 4px; font-family: 'DM Mono', monospace; }
+  .race-list { flex: 1; }
+  .race-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .race-item:hover { background: var(--surface2); }
+  .race-item.active { background: var(--surface3); border-left: 3px solid var(--gold); }
+  .race-item.has-bet { border-left: 3px solid var(--green); }
+  .race-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); min-width: 24px; }
+  .race-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .race-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2); }
+  .bet-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(46,204,138,0.15); color: var(--green); font-weight: 600; }
+  .no-races { padding: 24px 16px; color: var(--text3); font-size: 13px; text-align: center; }
+
+  /* MAIN PANELS */
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--text); }
+  .panel-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 6px; }
+  .stat-value { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--text); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+
+  /* RACE DETAIL */
+  .race-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+  .race-detail-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+  .track-name { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+  .race-meta { display: flex; gap: 16px; }
+  .meta-item { font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .meta-item strong { color: var(--text); }
+  .going-badge { padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .going-good { background: rgba(46,204,138,0.15); color: var(--green); }
+  .going-soft { background: rgba(74,158,255,0.15); color: var(--blue); }
+  .going-heavy { background: rgba(155,127,255,0.15); color: var(--purple); }
+  .going-firm { background: rgba(240,180,41,0.15); color: var(--gold); }
+  .going-synthetic { background: rgba(255,140,0,0.18); color: #ff8c00; }
+
+  /* RUNNERS TABLE */
+  .runners-table { width: 100%; border-collapse: collapse; }
+  .runners-table th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .runners-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .runners-table tr:last-child td { border-bottom: none; }
+  .runners-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .runners-table tr.top-pick td { background: rgba(240,180,41,0.04); }
+  .runners-table tr.top-pick td:first-child { border-left: 3px solid var(--gold); }
+
+  .runner-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); }
+  .runner-name { font-weight: 600; font-size: 14px; }
+  .runner-jockey { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .barrier-badge { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 4px; background: var(--surface2); font-size: 11px; font-family: 'DM Mono', monospace; }
+
+  /* SCORE BAR */
+  .score-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .score-bar { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; max-width: 100px; }
+  .score-bar-fill { height: 100%; border-radius: 3px; background: var(--gold); transition: width 0.5s ease; }
+  .score-bar-fill.high { background: var(--green); }
+  .score-bar-fill.med { background: var(--gold); }
+  .score-bar-fill.low { background: var(--text3); }
+  .score-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); min-width: 32px; }
+
+  /* ODDS & VALUE */
+  .odds-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; }
+  .prob-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text2); }
+  .value-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .value-pos { background: rgba(46,204,138,0.15); color: var(--green); }
+  .value-neg { background: rgba(240,82,82,0.1); color: var(--red); }
+  .value-neutral { background: var(--surface2); color: var(--text3); }
+
+  /* BET RECOMMENDATION */
+  .bet-rec { display: flex; align-items: center; gap: 8px; }
+  .tier-badge { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
+  .tier-a { background: rgba(46,204,138,0.2); color: var(--green); border: 1px solid rgba(46,204,138,0.3); }
+  .tier-b { background: rgba(240,180,41,0.2); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); }
+  .tier-c { background: rgba(74,158,255,0.15); color: var(--blue); border: 1px solid rgba(74,158,255,0.25); }
+  .tier-skip { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+  .bet-type-label { font-size: 11px; color: var(--text2); }
+
+  /* BEST BETS PANEL */
+  .best-bets { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; }
+  .best-bets h2 { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .best-bets h2::before { content: ''; display: inline-block; width: 4px; height: 18px; background: var(--gold); border-radius: 2px; }
+  .pin-btn { background: none; border: none; cursor: pointer; font-size: 15px; opacity: 0.4; padding: 2px 4px; border-radius: 4px; transition: opacity 0.15s; line-height: 1; }
+  .pin-btn:hover { opacity: 1; background: rgba(255,255,255,0.06); }
+  .pin-btn.pinned { opacity: 1; }
+  .bet-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 16px; transition: border-color 0.15s; }
+  .bet-card:hover { border-color: var(--border2); }
+  .bet-card.tier-a-card { border-left: 3px solid var(--green); }
+  .bet-card.tier-b-card { border-left: 3px solid var(--gold); }
+  .bet-card.tier-c-card { border-left: 3px solid var(--blue); }
+  .bet-card-left { flex: 1; }
+  .bet-card-race { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 3px; }
+  .bet-card-name { font-size: 15px; font-weight: 600; }
+  .bet-card-detail { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .bet-card-right { text-align: right; }
+  .bet-card-odds { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; color: var(--gold); }
+  .bet-card-stake { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .bet-card-value { font-size: 11px; color: var(--green); font-family: 'DM Mono', monospace; }
+  .no-bets { color: var(--text3); font-size: 13px; text-align: center; padding: 20px; }
+
+  /* SETTINGS MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: flex; align-items: center; justify-content: center; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; margin-bottom: 6px; }
+  .modal p { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .info-box { background: var(--surface2); border-radius: 6px; padding: 12px 14px; font-size: 12px; color: var(--text2); line-height: 1.6; }
+  .info-box strong { color: var(--text); }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px; color: var(--text3); }
+  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 24px; }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; }
+  .empty-text { font-size: 13px; color: var(--text3); line-height: 1.6; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 12px 16px; font-size: 13px; z-index: 300; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+
+  .refresh-btn { font-size: 16px; background: none; border: none; cursor: pointer; color: var(--text2); padding: 4px; transition: color 0.15s; }
+  .refresh-btn:hover { color: var(--gold); }
+
+  /* TRACKER */
+  .tracker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; }
+  .tracker-overlay.hidden { display: none; }
+  .tracker-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 28px; width: 100%; max-width: 1000px; }
+  .tracker-modal h2 { font-family: "Bebas Neue", sans-serif; font-size: 24px; letter-spacing: 1px; margin-bottom: 4px; }
+  .tracker-modal .subtitle { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .pnl-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+  .pnl-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+  .pnl-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 6px; }
+  .pnl-card .value { font-family: "DM Mono", monospace; font-size: 20px; font-weight: 500; }
+  .pnl-card .value.pos { color: var(--green); }
+  .pnl-card .value.neg { color: var(--red); }
+  .pnl-card .value.gold { color: var(--gold); }
+  .tier-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tier-tab { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .tier-tab.active { border-color: var(--gold); color: var(--gold); }
+  .bets-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .bets-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  .bets-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .bets-table tr:last-child td { border-bottom: none; }
+  .result-btn { padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 11px; cursor: pointer; margin-right: 4px; transition: all 0.1s; font-family: "DM Mono", monospace; font-weight: 600; }
+  .result-btn:hover { border-color: var(--text2); }
+  .result-btn.win { background: rgba(46,204,138,0.2); color: var(--green); border-color: var(--green); }
+  .result-btn.place { background: rgba(74,158,255,0.15); color: var(--blue); border-color: var(--blue); }
+  .result-btn.loss { background: rgba(240,82,82,0.1); color: var(--red); border-color: var(--red); }
+  .result-btn.scratch { background: var(--surface3); color: var(--text3); border-color: var(--text3); }
+  .no-bets-msg { text-align: center; padding: 40px; color: var(--text3); font-size: 13px; }
+  .tracker-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: space-between; align-items: center; }
+  .export-note { font-size: 11px; color: var(--text3); }
+
+  /* TOP PICKS */
+  .toppicks-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; }
+  .toppicks-overlay.hidden { display: none; }
+  .toppicks-modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 28px; width: 100%; max-width: 900px; }
+  .toppicks-modal h2 { font-family: "Bebas Neue", sans-serif; font-size: 24px; letter-spacing: 1px; margin-bottom: 4px; }
+  .toppicks-subtitle { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+  .picks-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .picks-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .picks-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .picks-table tr:last-child td { border-bottom: none; }
+  .picks-table tr.pick-top td:first-child { border-left: 3px solid var(--gold); }
+  .picks-table tr.pick-top { background: rgba(240,180,41,0.04); }
+  .dominance-bar { display: flex; align-items: center; gap: 8px; }
+  .dominance-fill { height: 6px; border-radius: 3px; background: var(--gold); min-width: 4px; }
+  .dominance-val { font-family: "DM Mono", monospace; font-size: 11px; color: var(--text2); min-width: 36px; }
+  .pick-result-btn { padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 11px; cursor: pointer; margin-right: 3px; font-family: "DM Mono", monospace; font-weight: 600; }
+  .pick-result-btn.win { background: rgba(46,204,138,0.2); color: var(--green); border-color: var(--green); }
+  .pick-result-btn.place { background: rgba(74,158,255,0.15); color: var(--blue); border-color: var(--blue); }
+  .pick-result-btn.loss { background: rgba(240,82,82,0.1); color: var(--red); border-color: var(--red); }
+  .pick-result-btn.scratch { background: var(--surface3); color: var(--text3); }
+  .picks-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+  .picks-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .picks-stat .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 4px; }
+  .picks-stat .value { font-family: "DM Mono", monospace; font-size: 18px; font-weight: 500; }
+
+  /* MOBILE RESPONSIVE */
+  @media (max-width: 768px) {
+    header { padding: 10px 14px; flex-wrap: wrap; gap: 8px; }
+    .logo { font-size: 20px; }
+    .logo span { display: none; }
+    .header-right { gap: 6px; flex-wrap: wrap; }
+    .btn { padding: 6px 10px; font-size: 12px; }
+    #oddsRefreshLabel { display: none !important; }
+    .app { flex-direction: column; height: auto; min-height: calc(100vh - 57px); }
+    .sidebar { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border); max-height: 280px; overflow-y: auto; }
+    .main { padding: 12px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .runners-table { font-size: 12px; }
+    .runners-table th { padding: 8px 6px; font-size: 9px; }
+    .runners-table td { padding: 8px 6px; }
+    .score-bar { max-width: 60px; }
+    .bet-card { flex-direction: column; gap: 8px; }
+    .bet-card-right { text-align: left; display: flex; gap: 16px; align-items: center; }
+    .pnl-grid { grid-template-columns: repeat(3, 1fr); }
+    .tracker-modal { padding: 16px; border-radius: 0; }
+    .modal { width: 95vw; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .pnl-grid { grid-template-columns: repeat(2, 1fr); }
+    .race-detail-header { flex-direction: column; gap: 8px; }
+    .race-meta { flex-wrap: wrap; gap: 8px; }
+    /* Hide less important columns on small screens */
+    .runners-table th:nth-child(6),
+    .runners-table td:nth-child(6) { display: none; } /* hide EV col */
+  }
+</style>
+</head>
+<body>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>Dashboard Setup</h2>
+    <p>Enter your API credentials below. These are saved locally in your browser only.</p>
+    <div class="form-group">
+      <label>Punting Form API Key</label>
+      <input type="password" id="pfKey" placeholder="Your Punting Form API key" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Betfair App Key (Delayed)</label>
+      <input type="password" id="bfKey" placeholder="Your Betfair delayed app key" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>The Odds API Key</label>
+      <input type="password" id="oddsApiKey" placeholder="Your the-odds-api.com key" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="bTierEnabled" style="width:16px;height:16px;cursor:pointer">
+        <span>Enable B Tier Bets <span style="font-size:11px;color:var(--text3)">(off by default — turn on for Spring Carnival, Everest, Golden Eagle etc)</span></span>
+      </label>
+    </div>
+    <div class="form-group">
+      <label>FormFav API Key</label>
+      <input type="password" id="ffKey" placeholder="Your FormFav API key (fk_...)" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Ladbrokes — Your Email (From header)</label>
+      <input type="text" id="lbFrom" placeholder="your@email.com" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Ladbrokes — Partner Name (X-Partner header)</label>
+      <input type="text" id="lbPartner" placeholder="e.g. Form Lab Racing" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Discord Webhook URL</label>
+      <input type="password" id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Betfair Username</label>
+      <input type="text" id="bfUser" placeholder="Your Betfair username/email" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Betfair Password</label>
+      <input type="password" id="bfPass" placeholder="Your Betfair password" autocomplete="off">
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Betting Bank ($)</label>
+        <input type="number" id="bankSize" placeholder="e.g. 500" value="500">
+      </div>
+      <div class="form-group">
+        <label>Max Stake % of Bank</label>
+        <input type="number" id="maxStakePct" placeholder="e.g. 5" value="5">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Staking Method</label>
+      <select id="stakingMethod">
+        <option value="kelly">Kelly Criterion (recommended)</option>
+        <option value="flat">Flat Staking</option>
+        <option value="level">Level Stakes (% of bank)</option>
+      </select>
+    </div>
+    <div class="divider"></div>
+    <div class="info-box">
+      <strong>Proxy required:</strong> Make sure your local proxy is running.<br>
+      Open Terminal and run: <strong>node proxy.js</strong><br>
+      Keep that Terminal window open while using this dashboard.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelSettings">Cancel</button>
+      <button class="btn btn-primary" id="saveSettings">Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="logo">FORM LAB <span>AU RACING INTELLIGENCE</span></div>
+  </div>
+  <div class="header-right">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-label" id="statusLabel">NOT CONNECTED</span>
+    <span id="oddsRefreshLabel" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;display:none">
+      odds updated <span id="lastRefreshTime">—</span> · <span id="nextRefreshIn">—</span>
+    </span>
+    <button class="btn" id="autoScanBtn" title="Auto-scan all races every 30 mins">🔄 Auto-scan</button>
+    <button class="btn" id="bfDiagBtn" title="Test Betfair connection">🔧 BF Test</button>
+    <button class="btn" id="discordSummaryBtn" title="Send daily summary to Discord">📨 Send Summary</button>
+    <button class="btn" id="satTop10Btn" style="display:none">🏆 Metro Top 10</button>
+    <button class="btn" id="topPicksBtn">🏆 Top Picks</button>
+    <button class="btn" id="trackerBtn">📊 Results Tracker</button>
+    <input type="date" id="raceDatePicker" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;" title="Select race date">
+    <button class="btn btn-primary" id="loadRacesBtn">Load Races</button>
+    <button class="btn" id="settingsBtn" style="display:none">⚙ Settings</button>
+    <span style="font-size:11px;color:var(--text3);padding:4px 8px;border:1px solid var(--border);border-radius:4px">👁 View Only</span>
+    <button class="btn" id="debugBtn" title="Show raw API response">Debug API</button>
+  </div>
+</header>
+
+<!-- APP BODY -->
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>Race Card</h3>
+      <div class="date-display" id="dateDisplay">—</div>
+      <select id="stateFilter" style="margin-top:8px;width:100%;padding:6px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none;">
+        <option value="ALL">All States</option>
+        <option value="WA">WA</option>
+        <option value="VIC">VIC</option>
+        <option value="NSW">NSW</option>
+        <option value="QLD">QLD</option>
+        <option value="SA">SA</option>
+        <option value="TAS">TAS</option>
+        <option value="NT">NT</option>
+        <option value="ACT">ACT</option>
+        <option value="NZ">NZ</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--text2);cursor:pointer;">
+        <input type="checkbox" id="metroOnly" style="accent-color:var(--gold)">
+        Metro/Feature tracks only
+      </label>
+    </div>
+    <div class="race-list" id="raceList">
+      <div class="no-races">Load today's races to begin</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainPanel">
+    <div class="empty-state">
+      <div class="empty-icon">🏇</div>
+      <div class="empty-title">WA Metro Racing Intelligence</div>
+      <div class="empty-text">
+        Configure your API keys in Settings, then load today's races.<br>
+        All Australian thoroughbred meetings, every day. Filter by state using the sidebar.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOP PICKS MODAL -->
+<div class="toppicks-overlay hidden" id="topPicksOverlay">
+  <div class="toppicks-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h2>🏆 Top Picks — Score Dominance</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="refreshTopPicks">↻ Refresh</button>
+        <button class="btn" id="closeTopPicks">✕ Close</button>
+      </div>
+    </div>
+    <div class="toppicks-subtitle">
+      Horses with the highest algo score <strong>relative to their field</strong> — ranked by score dominance (gap over 2nd place).<br>
+      Track this alongside the main recommendations to compare which system produces better results.
+    </div>
+
+    <div class="picks-stats" id="picksStats">
+      <div class="picks-stat"><div class="label">Picks Today</div><div class="value gold" id="pickStatTotal">—</div></div>
+      <div class="picks-stat"><div class="label">Win Rate</div><div class="value" id="pickStatWin">—</div></div>
+      <div class="picks-stat"><div class="label">Place Rate</div><div class="value" id="pickStatPlace">—</div></div>
+      <div class="picks-stat"><div class="label">P&L</div><div class="value" id="pickStatPnl">—</div></div>
+    </div>
+
+    <!-- Track Performance Breakdown -->
+    <div id="trackBreakdown" style="margin-bottom:20px;display:none">
+      <p style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">Track Performance (settled bets)</p>
+      <div id="trackBreakdownGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px"></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;gap:8px">
+        <button class="tier-tab active" id="pickFilterAll" onclick="setPickFilter('ALL')">All Races</button>
+        <button class="tier-tab" id="pickFilterMetro" onclick="setPickFilter('METRO')">Metro</button>
+        <button class="tier-tab" id="pickFilterCountry" onclick="setPickFilter('COUNTRY')">Country</button>
+      </div>
+      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="showTrackBreakdown" onchange="toggleTrackBreakdown()" style="accent-color:var(--gold)">
+        Show track breakdown
+      </label>
+    </div>
+
+    <div style="overflow-x:auto">
+      <table class="picks-table" id="picksTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Track</th>
+            <th>Race</th>
+            <th>Horse</th>
+            <th>Algo Score</th>
+            <th>Score Gap</th>
+            <th>Win %</th>
+            <th>Place %</th>
+            <th>BF Odds</th>
+            <th>Last 10</th>
+            <th>Result</th>
+            <th>P&L</th>
+          </tr>
+        </thead>
+        <tbody id="picksBody">
+          <tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">Load races and click races to populate top picks</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;color:var(--text3)">Top picks saved locally · resets each day</span>
+      <button class="btn" id="exportPicksCsvBtn">Export CSV</button>
+    </div>
+  </div>
+</div>
+
+<!-- SATURDAY TOP 10 MODAL -->
+<div class="tracker-overlay hidden" id="satTop10Overlay">
+  <div class="tracker-modal" style="max-width:800px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <h2 style="font-family:Bebas Neue,sans-serif;font-size:22px;letter-spacing:1px">🏆 Metro Top 10 Best Bets</h2>
+        <p style="font-size:12px;color:var(--text2);margin-top:4px">Best bets ranked by algo confidence score across all metro meetings — Saturday &amp; Wednesday</p>
+      </div>
+      <button class="btn" id="closeSatTop10">✕ Close</button>
+    </div>
+    <div id="satTop10Body" style="overflow-x:auto">
+      <p style="color:var(--text3);text-align:center;padding:20px">Load and click through all races first to populate the top 10</p>
+    </div>
+  </div>
+</div>
+
+<!-- TRACKER MODAL -->
+<div class="tracker-overlay hidden" id="trackerOverlay">
+  <div class="tracker-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h2>📊 Results Tracker</h2>
+      <button class="btn" id="closeTracker">✕ Close</button>
+    </div>
+    <div class="subtitle">Track algo bet recommendations and measure P&amp;L over time</div>
+
+    <!-- Summary cards -->
+    <div class="pnl-grid" id="pnlGrid">
+      <div class="pnl-card"><div class="label">Total Bets</div><div class="value gold" id="statTotal">0</div></div>
+      <div class="pnl-card"><div class="label">Win Strike Rate</div><div class="value" id="statWinRate">0%</div></div>
+      <div class="pnl-card"><div class="label">Place Strike Rate</div><div class="value" id="statPlaceRate">0%</div></div>
+      <div class="pnl-card"><div class="label">P&amp;L (units)</div><div class="value" id="statPnl">0.00</div></div>
+      <div class="pnl-card"><div class="label">ROI %</div><div class="value" id="statRoi">0%</div></div>
+    </div>
+    <!-- Timing breakdown -->
+    <div id="timingBreakdown" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Night Before</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-family:DM Mono,monospace;font-size:12px">
+          <div><div style="color:var(--text3);font-size:10px">Bets</div><div id="nightBets">—</div></div>
+          <div><div style="color:var(--text3);font-size:10px">Win%</div><div id="nightWin">—</div></div>
+          <div><div style="color:var(--text3);font-size:10px">P&L</div><div id="nightPnl">—</div></div>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Race Day</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-family:DM Mono,monospace;font-size:12px">
+          <div><div style="color:var(--text3);font-size:10px">Bets</div><div id="dayBets">—</div></div>
+          <div><div style="color:var(--text3);font-size:10px">Win%</div><div id="dayWin">—</div></div>
+          <div><div style="color:var(--text3);font-size:10px">P&L</div><div id="dayPnl">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier breakdown -->
+    <div class="tier-tabs">
+      <button class="tier-tab active" data-tier="ALL">All Tiers</button>
+      <button class="tier-tab" data-tier="A">A Tier</button>
+      <button class="tier-tab" data-tier="B">B Tier</button>
+      <button class="tier-tab" data-tier="C">C Tier</button>
+    </div>
+
+    <!-- Bets table -->
+    <div style="overflow-x:auto">
+      <table class="bets-table" id="betsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Track</th>
+            <th>Race</th>
+            <th>Horse</th>
+            <th>Tier</th>
+            <th>Type</th>
+            <th>Odds</th>
+      <th title="FormFav data">FF</th>
+            <th>Stake</th>
+            <th>Dist</th>
+            <th>EV%</th>
+            <th>Result</th>
+            <th>P&amp;L</th>
+            <th>Timing</th>
+            <th>Notes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="betsBody">
+          <tr><td colspan="12" class="no-bets-msg">No bets logged yet. Load a race to see recommendations — they'll be auto-logged here.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tracker-actions">
+      <span class="export-note">Bets are saved locally in your browser</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="exportCsvBtn">Export CSV</button>
+        <button class="btn" style="color:var(--red);border-color:var(--red)" id="clearBetsBtn">Clear All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Auto-detect proxy location
+// file:// opened directly = use localhost
+// served via server.js = use same hostname as page
+const IS_LOCAL = false;
+const PROXY = 'https://formlab-proxy-production.up.railway.app/';
+const PF_BASE = 'https://api.puntingform.com.au/v2/form';
+const BF_API = 'https://api.betfair.com/exchange/betting/json-rpc/v1';
+const BF_AUTH = 'https://identitysso-cert.betfair.com/api/login';
+const BF_AUTH2 = 'https://identitysso.betfair.com/api/login';
+
+async function pfFetch(endpoint, params = {}) {
+  const qs = new URLSearchParams({ ...params, apiKey: config.pfKey }).toString();
+  const url = `${PF_BASE}/${endpoint}?${qs}`;
+  console.log('PF fetch:', url);
+  const res = await fetch(PROXY + encodeURIComponent(url));
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Punting Form error ${res.status}: ${text.substring(0, 200)}`);
+  }
+  return await res.json();
+}
+
+let config = {};
+let bfSessionToken = '';
+let allRaces = [];
+let allMeetings = [];
+let selectedRace = null;
+let selectedMeeting = null;
+let selectedRunners = [];
+let selectedMeetingData = null;
+let bestBets = [];
+let oddsRefreshTimer = null;
+let lastOddsRefresh = null;
+let oddsApiEvents = null; // cached Odds API events for the day
+
+// Metro/feature tracks only filter
+const METRO_TRACKS = [
+  // VIC premier metro
+  'flemington', 'caulfield', 'moonee valley', 'sandown', 'cranbourne',
+  // NSW premier metro
+  'randwick', 'rosehill', 'warwick farm',
+  // QLD metro
+  'eagle farm', 'doomben',
+  // SA metro
+  'morphettville',
+  // WA metro
+  'ascot', 'belmont',
+];
+
+// Provincial tracks — TAB metro status but field quality closer to country
+// Require minimum score gap of 3 before recommending
+const PROVINCIAL_TRACKS = [
+  // NSW provincial
+  'hawkesbury', 'kembla grange', 'newcastle', 'gosford',
+  // VIC provincial
+  'geelong', 'ballarat', 'bendigo', 'seymour',
+  // QLD provincial
+  'sunshine coast', 'gold coast', 'ipswich', 'toowoomba',
+  // SA provincial
+  'gawler',
+  // Capital cities with provincial quality racing
+  'darwin', 'hobart', 'launceston', 'canberra',
+];
+
+function isMetroTrack(venueName) {
+  const v = (venueName || '').toLowerCase();
+  return METRO_TRACKS.some(function(t) { return v.includes(t); });
+}
+
+function isProvincialTrack(venueName) {
+  const v = (venueName || '').toLowerCase();
+  return PROVINCIAL_TRACKS.some(function(t) { return v.includes(t); });
+}
+
+// Detect synthetic/all-weather track from venue name
+const SYNTHETIC_TRACKS = [
+  'pakenham', 'ballarat synthetic', 'ballarat racing', 'sunshine coast synthetic',
+  'cranbourne synthetic', 'geelong synthetic', 'moonee valley synthetic',
+  'doomben synthetic', 'gold coast synthetic',
+];
+function isSyntheticTrack(venueName, trackSurface) {
+  // PF API surface field is the most reliable signal
+  if (trackSurface && trackSurface.toLowerCase() === 'synthetic') return true;
+  const v = (venueName || '').toLowerCase();
+  // explicit "synthetic" keyword in venue name
+  if (v.includes('synthetic')) return true;
+  // Pakenham is always synthetic (all-weather only)
+  if (v.includes('pakenham')) return true;
+  return SYNTHETIC_TRACKS.some(function(t) { return v.includes(t); });
+}
+
+// Detect state from venue name
+function detectState(venue) {
+  const v = venue.toLowerCase();
+  if (v.includes('ascot') || v.includes('belmont') || v.includes('pinjarra') || v.includes('bunbury') || v.includes('kalgoorlie') || v.includes('perth')) return 'WA';
+  if (v.includes('flemington') || v.includes('caulfield') || v.includes('moonee') || v.includes('sandown') || v.includes('ballarat') || v.includes('bendigo') || v.includes('geelong')) return 'VIC';
+  if (v.includes('randwick') || v.includes('rosehill') || v.includes('warwick') || v.includes('hawkesbury') || v.includes('newcastle') || v.includes('gosford') || v.includes('kembla')) return 'NSW';
+  if (v.includes('eagle farm') || v.includes('doomben') || v.includes('sunshine') || v.includes('gold coast') || v.includes('ipswich') || v.includes('toowoomba')) return 'QLD';
+  if (v.includes('morphettville') || v.includes('gawler') || v.includes('murray') || v.includes('port augusta') || v.includes('naracoorte') || v.includes('balaklava') || v.includes('strathalbyn')) return 'SA';
+  if (v.includes('darwin') || v.includes('alice')) return 'NT';
+  if (v.includes('hobart') || v.includes('launceston') || v.includes('devonport')) return 'TAS';
+  if (v.includes('canberra') || v.includes('act')) return 'ACT';
+  if (v.includes('auckland') || v.includes('trentham') || v.includes('ellerslie') || v.includes('matamata') || v.includes('hastings')) return 'NZ';
+  return 'OTHER';
+}
+
+// ─── STORAGE ───────────────────────────────────────────────
+function loadConfig() {
+  const saved = localStorage.getItem('waRacingConfig');
+  if (saved) {
+    config = JSON.parse(saved);
+    return true;
+  }
+  return false;
+}
+
+function saveConfig() {
+  config = {
+    pfKey: document.getElementById('pfKey').value.trim(),
+    bfKey: document.getElementById('bfKey').value.trim(),
+    bfUser: document.getElementById('bfUser').value.trim(),
+    bfPass: document.getElementById('bfPass').value.trim(),
+    oddsApiKey: document.getElementById('oddsApiKey').value.trim(),
+    bTierEnabled: document.getElementById('bTierEnabled').checked,
+    ffKey: document.getElementById('ffKey').value.trim(),
+    lbFrom: document.getElementById('lbFrom').value.trim(),
+    lbPartner: document.getElementById('lbPartner').value.trim(),
+    discordWebhook: document.getElementById('discordWebhook').value.trim(),
+    bankSize: parseFloat(document.getElementById('bankSize').value) || 500,
+    maxStakePct: parseFloat(document.getElementById('maxStakePct').value) || 5,
+    stakingMethod: document.getElementById('stakingMethod').value
+  };
+  localStorage.setItem('waRacingConfig', JSON.stringify(config));
+}
+
+function populateSettingsForm() {
+  if (config.pfKey) document.getElementById('pfKey').value = config.pfKey;
+  if (config.bfKey) document.getElementById('bfKey').value = config.bfKey;
+  if (config.bfUser) document.getElementById('bfUser').value = config.bfUser;
+  if (config.bfPass) document.getElementById('bfPass').value = config.bfPass;
+  if (config.oddsApiKey) document.getElementById('oddsApiKey').value = config.oddsApiKey;
+  document.getElementById('bTierEnabled').checked = config.bTierEnabled || false;
+  if (config.ffKey) document.getElementById('ffKey').value = config.ffKey;
+  if (config.lbFrom) document.getElementById('lbFrom').value = config.lbFrom;
+  if (config.lbPartner) document.getElementById('lbPartner').value = config.lbPartner;
+  if (config.discordWebhook) document.getElementById('discordWebhook').value = config.discordWebhook;
+  if (config.bankSize) document.getElementById('bankSize').value = config.bankSize;
+  if (config.maxStakePct) document.getElementById('maxStakePct').value = config.maxStakePct;
+  if (config.stakingMethod) document.getElementById('stakingMethod').value = config.stakingMethod;
+}
+
+// ─── UI HELPERS ────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function setStatus(live, label) {
+  document.getElementById('statusDot').className = 'status-dot' + (live ? ' live' : '');
+  document.getElementById('statusLabel').textContent = label;
+}
+
+function showLoading(container) {
+  container.innerHTML = `<div class="loading"><div class="spinner"></div>Loading...</div>`;
+}
+
+// ─── BETFAIR AUTH ───────────────────────────────────────────
+async function bfLogin() {
+  if (!config.bfUser || !config.bfPass || !config.bfKey) return false;
+  const body = 'username=' + encodeURIComponent(config.bfUser) + '&password=' + encodeURIComponent(config.bfPass);
+  const authUrls = [
+    'https://identitysso.betfair.com.au/api/login',
+    'https://identitysso.betfair.com/api/login'
+  ];
+  for (const authUrl of authUrls) {
+    try {
+      const res = await fetch(PROXY + encodeURIComponent(authUrl), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Application': config.bfKey, 'Accept': 'application/json' },
+        body: body
+      });
+      const data = await res.json();
+      console.log('BF login attempt', authUrl, JSON.stringify(data));
+      if (data.token && data.status === 'SUCCESS') {
+        bfSessionToken = data.token;
+        console.log('BF login SUCCESS');
+        return true;
+      }
+    } catch (e) { console.warn('BF auth attempt failed:', authUrl, e.message); }
+  }
+  console.warn('All Betfair login attempts failed');
+  return false;
+}
+
+// ─── PUNTING FORM ───────────────────────────────────────────
+async function pfFetch(endpoint, params) {
+  // Send apiKey as query param (v2 API standard)
+  const p = Object.assign({}, params, { apiKey: config.pfKey });
+  const qs = Object.keys(p).map(k => k + '=' + encodeURIComponent(p[k])).join('&');
+  const url = PF_BASE + '/' + endpoint + '?' + qs;
+  console.log('PF fetch:', url.replace(config.pfKey, '***'));
+  const res = await fetch(PROXY + encodeURIComponent(url), {
+    headers: { 'Accept': 'application/json' }
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(function(){ return ''; });
+    throw new Error('Punting Form error ' + res.status + ': ' + text.substring(0, 300));
+  }
+  const data = await res.json();
+  console.log('PF response:', JSON.stringify(data).substring(0, 300));
+  return data;
+}
+
+async function fetchPFMeetings(date) {
+  // PF API expects yyyy-mm-dd (ISO format)
+  return await pfFetch('meetingslist', { meetingDate: date });
+}
+
+async function fetchPFRace(meetingId, raceNumber) {
+  return await pfFetch('fields', { meetingId: meetingId, raceNumber: raceNumber });
+}
+
+// ─── BETFAIR API CALL ────────────────────────────────────────
+async function bfCall(method, params) {
+  if (!bfSessionToken) return null;
+  const payload = { jsonrpc: '2.0', method: 'SportsAPING/v1.0/' + method, params: params, id: 1 };
+  try {
+    const res = await fetch(PROXY + encodeURIComponent(BF_API), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Application': config.bfKey,
+        'X-Authentication': bfSessionToken,
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) { console.error('BF API error:', JSON.stringify(data.error)); return null; }
+    return data.result || null;
+  } catch (e) { console.error('BF call error:', e); return null; }
+}
+
+async function fetchBFMarketsForRace(venueName, startTimeISO) {
+  if (!bfSessionToken) return [];
+  const startDate = new Date(startTimeISO);
+  // Widen window significantly to catch any timing offsets
+  const fromTime = new Date(startDate.getTime() - 30 * 60000).toISOString().split('.')[0] + 'Z';
+  const toTime = new Date(startDate.getTime() + 30 * 60000).toISOString().split('.')[0] + 'Z';
+  console.log('BF market search window:', fromTime, '->', toTime, 'venue:', venueName);
+
+  // First try WIN markets
+  let result = await bfCall('listMarketCatalogue', {
+    filter: {
+      eventTypeIds: ['7'],
+      marketCountries: ['AU', 'NZ'],
+      marketTypeCodes: ['WIN'],
+      marketStartTime: { from: fromTime, to: toTime }
+    },
+    marketProjection: ['RUNNER_DESCRIPTION', 'MARKET_START_TIME', 'EVENT'],
+    sort: 'FIRST_TO_START',
+    maxResults: '50'
+  });
+
+  // If nothing found, try without country filter (catches some AU markets listed differently)
+  if (!result || result.length === 0) {
+    console.log('No results with AU/NZ filter, trying without country filter...');
+    result = await bfCall('listMarketCatalogue', {
+      filter: {
+        eventTypeIds: ['7'],
+        marketTypeCodes: ['WIN'],
+        marketStartTime: { from: fromTime, to: toTime }
+      },
+      marketProjection: ['RUNNER_DESCRIPTION', 'MARKET_START_TIME', 'EVENT'],
+      sort: 'FIRST_TO_START',
+      maxResults: '50'
+    });
+  }
+
+  if (!result || result.length === 0) { console.log('No BF markets found in window'); return []; }
+  console.log('BF markets in window (' + result.length + '):', result.map(function(m) {
+    return (m.event ? m.event.name + ' [' + (m.event.venue||'no venue') + ']' : 'no event') + ' @ ' + m.marketStartTime;
+  }));
+  // Match by venue name first, fall back to closest by time
+  const venueTokens = venueName.toLowerCase()
+    .replace(/[^a-z ]/g, '')
+    .split(' ')
+    .filter(function(t) { return t.length > 3; });
+
+  console.log('BF venue search tokens:', venueTokens);
+
+  // Try venue name match
+  const venueMatched = result.filter(function(m) {
+    const ev = ((m.event && m.event.venue) ? m.event.venue : '').toLowerCase();
+    const name = ((m.event && m.event.name) ? m.event.name : '').toLowerCase();
+    const combined = ev + ' ' + name;
+    return venueTokens.some(function(token) { return combined.includes(token); });
+  });
+
+  console.log('BF venue matched:', venueMatched.length, 'for tokens:', venueTokens);
+
+  if (venueMatched.length > 0) return venueMatched;
+
+  // Fallback — return the single closest market by start time
+  // This handles tracks where BF name differs from PF name
+  const startDateRef = new Date(startTimeISO);
+  const closest = result.sort(function(a, b) {
+    return Math.abs(new Date(a.marketStartTime) - startDateRef) - Math.abs(new Date(b.marketStartTime) - startDateRef);
+  })[0];
+
+  if (closest) {
+    const timeDiff = Math.abs(new Date(closest.marketStartTime) - startDateRef);
+    if (timeDiff < 5 * 60 * 1000) { // within 5 mins = strong match
+      console.log('BF time-based match:', closest.event ? closest.event.name : closest.marketId, 'diff:', Math.round(timeDiff/1000) + 's');
+      return [closest];
+    }
+  }
+  console.log('No BF market matched by venue or time');
+  return [];
+}
+
+async function fetchBFOdds(marketId) {
+  if (!bfSessionToken || !marketId) return null;
+  const result = await bfCall('listMarketBook', {
+    marketIds: [marketId],
+    priceProjection: { priceData: ['EX_BEST_OFFERS'], exBestOffersOverrides: { bestPricesDepth: 1 } }
+  });
+  return result ? result[0] : null;
+}
+
+// ─── THE ODDS API ────────────────────────────────────────────
+const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
+
+// Fetch all AU horse racing odds for today — returns array of events with odds
+async function fetchOddsAPIMarkets() {
+  if (!config.oddsApiKey) return null;
+  try {
+    // Known AU horse racing sport keys — try all, use whichever returns data
+    const AU_SPORT_KEYS = [
+      'horseracing_au_thoroughbred',
+      'horseracing_au',
+      'horse_racing_australia',
+      'horseracing'
+    ];
+
+    const allEvents = [];
+
+    for (const sportKey of AU_SPORT_KEYS) {
+      const oddsUrl = ODDS_API_BASE + '/sports/' + sportKey + '/odds?apiKey=' + config.oddsApiKey
+        + '&regions=au&markets=h2h&oddsFormat=decimal';
+      console.log('Trying Odds API sport key:', sportKey);
+      try {
+        const oRes = await fetch(PROXY + encodeURIComponent(oddsUrl));
+        const responseText = await oRes.text();
+        console.log('Odds API response status:', oRes.status, 'body:', responseText.substring(0, 200));
+        if (!oRes.ok) continue;
+        const events = JSON.parse(responseText);
+        if (Array.isArray(events) && events.length > 0) {
+          console.log('✅ Found', events.length, 'events for sport key:', sportKey);
+          allEvents.push(...events);
+          break; // found working key, stop trying
+        }
+      } catch(e) {
+        console.warn('Sport key failed:', sportKey, e.message);
+      }
+    }
+
+    // If no events from sport keys, try the sports list with all=true to find correct key
+    if (allEvents.length === 0) {
+      console.log('Trying sports list to find correct AU racing key...');
+      const sportsUrl = ODDS_API_BASE + '/sports?apiKey=' + config.oddsApiKey + '&all=true';
+      const sRes = await fetch(PROXY + encodeURIComponent(sportsUrl));
+      const sports = await sRes.json();
+      const auSports = Array.isArray(sports)
+        ? sports.filter(function(s) { return s.key && (s.key.includes('racing') || s.key.includes('horse')); })
+        : [];
+      console.log('All racing/horse sport keys available:', auSports.map(function(s) { return s.key + '(' + (s.active?'active':'inactive') + ')'; }));
+    }
+
+    console.log('Odds API total events found:', allEvents.length);
+    if (allEvents.length > 0) {
+      console.log('Sample event:', JSON.stringify(allEvents[0]).substring(0, 500));
+    }
+    return allEvents.length > 0 ? allEvents : null;
+  } catch(e) {
+    console.error('Odds API fetch error:', e.message);
+    return null;
+  }
+}
+
+// Match a PF race to an Odds API event by venue name and start time
+function matchOddsAPIEvent(events, venueName, startTimeStr) {
+  if (!events || events.length === 0) return null;
+  const startDate = new Date(startTimeStr);
+  const venueTokens = venueName.toLowerCase().replace(/[^a-z ]/g,'').split(' ').filter(function(t){return t.length>3;});
+
+  // Find events within 10 mins of race start time and matching venue
+  const candidates = events.filter(function(ev) {
+    const evTime = new Date(ev.commence_time);
+    const timeDiff = Math.abs(evTime - startDate);
+    if (timeDiff > 10 * 60 * 1000) return false;
+    const evName = (ev.home_team + ' ' + ev.away_team + ' ' + (ev.sport_title||'')).toLowerCase();
+    return venueTokens.some(function(t) { return evName.includes(t); });
+  });
+
+  return candidates.length > 0 ? candidates[0] : null;
+}
+
+// Extract best available odds per runner from Odds API event
+function extractOddsAPIRunnerOdds(event) {
+  if (!event || !event.bookmakers || event.bookmakers.length === 0) return {};
+  const runnerOdds = {};
+
+  // Prefer TAB odds, fall back to best available
+  const prefOrder = ['tab', 'sportsbet', 'ladbrokes', 'neds', 'betfair_ex_au'];
+  let bookmaker = null;
+  for (const key of prefOrder) {
+    bookmaker = event.bookmakers.find(function(b) { return b.key === key; });
+    if (bookmaker) break;
+  }
+  if (!bookmaker) bookmaker = event.bookmakers[0];
+  if (!bookmaker) return {};
+
+  const market = bookmaker.markets && bookmaker.markets.find(function(m) { return m.key === 'h2h'; });
+  if (!market || !market.outcomes) return {};
+
+  market.outcomes.forEach(function(o) {
+    runnerOdds[o.name.toLowerCase().replace(/[^a-z]/g,'')] = o.price;
+  });
+
+  console.log('Odds API runner odds from', bookmaker.key, ':', JSON.stringify(runnerOdds).substring(0, 200));
+  return runnerOdds;
+}
+
+// ─── LADBROKES AFFILIATE API ─────────────────────────────────
+const LB_BASE = 'https://api-affiliates.ladbrokes.com.au/affiliates/v1';
+
+// Cache: meetingName|R1 -> race_id
+let lbRaceCache = {};
+let lbCacheDate = null;
+
+function getLbHeaders() {
+  const from = (config.lbFrom || 'formlab@racing.com');
+  const partner = (config.lbPartner || 'Form Lab Racing');
+  return {
+    'From': from,
+    'X-Partner': partner,
+    'Accept': 'application/json'
+  };
+}
+
+async function lbGet(endpoint, params) {
+  const headers = getLbHeaders();
+  let url = LB_BASE + endpoint;
+  if (params) {
+    const qs = Object.entries(params).map(function(e) {
+      return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]);
+    }).join('&');
+    url += '?' + qs;
+  }
+
+  // Try direct call first (works if Ladbrokes allows CORS from file://)
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'From': headers['From'],
+        'X-Partner': headers['X-Partner'],
+        'Accept': 'application/json'
+      },
+      mode: 'cors'
+    });
+    if (res.ok) {
+      console.log('LB direct call success:', endpoint);
+      return await res.json();
+    }
+    console.warn('LB direct failed:', res.status, '— trying proxy');
+  } catch(e) {
+    console.warn('LB direct error:', e.message, '— trying proxy');
+  }
+
+  // Fallback through proxy
+  const proxyUrl = PROXY + encodeURIComponent(url);
+  try {
+    const res = await fetch(proxyUrl, {
+      headers: {
+        'from': headers['From'],
+        'x-partner': headers['X-Partner'],
+        'accept': headers['Accept']
+      }
+    });
+    if (!res.ok) {
+      console.warn('Ladbrokes API proxy error:', res.status, endpoint);
+      return null;
+    }
+    return await res.json();
+  } catch(e) {
+    console.warn('LB proxy error:', e.message);
+    return null;
+  }
+}
+
+// Fetch and cache today's thoroughbred meetings from Ladbrokes
+async function cacheLbMarkets(targetDate) {
+  // Always fetch both today AND the target date (for night-before browsing)
+  const today = new Date().toISOString().split('T')[0];
+  const fetchDate = targetDate || today;
+
+  // Work out tomorrow's date
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  // Use the later of today or fetchDate as date_to
+  const dateTo = fetchDate > tomorrowStr ? fetchDate : tomorrowStr;
+
+  console.log('Fetching Ladbrokes meetings from', today, 'to', dateTo);
+
+  const data = await lbGet('/racing/meetings', {
+    category: 'T',
+    country: 'AUS',
+    date_from: today,
+    date_to: dateTo,
+    limit: 500
+  });
+
+  if (!data || !data.data || !data.data.meetings) {
+    console.warn('Ladbrokes: no meetings returned');
+    return;
+  }
+
+  const meetings = data.data.meetings;
+  console.log('Ladbrokes: ' + meetings.length + ' thoroughbred meetings (today + tomorrow)');
+
+  // Don't reset cache — merge in new races
+  meetings.forEach(function(meeting) {
+    const trackName = (meeting.name || '').toUpperCase();
+    (meeting.races || []).forEach(function(race) {
+      const raceNum = race.race_number || 0;
+      if (raceNum === 0) return;
+      const key = trackName + '|R' + raceNum + '|' + (race.start_time || '').substring(0, 10);
+      lbRaceCache[key] = {
+        race_id: race.id || '',
+        meeting_id: meeting.meeting || '',
+        track: meeting.name || '',
+        race_num: raceNum,
+        start_time: race.start_time || '',
+        track_condition: race.track_condition || '',
+        race_date: (race.start_time || '').substring(0, 10)
+      };
+    });
+  });
+
+  lbCacheDate = today;
+  console.log('LB cache built:', Object.keys(lbRaceCache).length, 'races (today + tomorrow)');
+  if (Object.keys(lbRaceCache).length > 0) {
+    showToast('Ladbrokes odds loaded — ' + Object.keys(lbRaceCache).length + ' races', 'success');
+  }
+}
+
+// Find LB race ID by track name and race number (fuzzy match)
+function findLbRaceId(venueName, raceNum, raceDate) {
+  const clean = function(s) {
+    return (s || '').toLowerCase()
+      .replace(/\(.*?\)/g, '')
+      .replace(/(aus|vic|nsw|qld|sa|wa|tas|act|nt)/g, '')
+      .replace(/[^a-z\s]/g, '')
+      .replace(/\s+/g, ' ').trim();
+  };
+
+  const venueClean = clean(venueName);
+  const raceKey = '|R' + raceNum;
+
+  // Filter by date if provided
+  const entries = Object.values(lbRaceCache).filter(function(e) {
+    if (raceDate && e.race_date && e.race_date !== raceDate) return false;
+    return String(e.race_num) === String(raceNum);
+  });
+
+  // Exact track name match first
+  for (const entry of entries) {
+    const entryClean = clean(entry.track);
+    if (venueClean === entryClean) return entry.race_id;
+  }
+
+  // Fuzzy match
+  let bestScore = 0, bestId = null;
+  for (const entry of entries) {
+    const entryClean = clean(entry.track);
+    if (venueClean.includes(entryClean) || entryClean.includes(venueClean)) {
+      const score = Math.min(venueClean.length, entryClean.length) / Math.max(venueClean.length, entryClean.length);
+      if (score > bestScore) { bestScore = score; bestId = entry.race_id; }
+    }
+    const words1 = venueClean.split(' ').filter(function(w) { return w.length > 2; });
+    const words2 = entryClean.split(' ').filter(function(w) { return w.length > 2; });
+    const overlap = words1.filter(function(w) { return words2.includes(w); }).length;
+    if (overlap > 0) {
+      const score = overlap / Math.max(words1.length, words2.length);
+      if (score > bestScore) { bestScore = score; bestId = entry.race_id; }
+    }
+  }
+
+  return bestScore >= 0.5 ? bestId : null;
+}
+
+// Fetch Ladbrokes win odds for a specific race
+async function fetchLbRaceOdds(venueName, raceNum) {
+  // Extract date from race start time if available
+  const raceDate = selectedRace && selectedRace.startTime
+    ? new Date(selectedRace.startTime).toISOString().substring(0, 10)
+    : null;
+  const raceId = findLbRaceId(venueName, raceNum, raceDate);
+  if (!raceId) {
+    console.log('LB: no race ID found for', venueName, 'R' + raceNum);
+    return {};
+  }
+
+  const data = await lbGet('/racing/events/' + raceId);
+  if (!data || !data.data) return {};
+
+  const runners = data.data.runners || [];
+  const oddsByTabNo = {};
+  const trackCondition = (data.data.race || {}).track_condition || '';
+
+  runners.forEach(function(runner) {
+    if (runner.is_scratched) return;
+    const name = (runner.name || '').toLowerCase().replace(/[^a-z]/g, '');
+    const tabNo = runner.barrier || runner.runner_number || 0;
+    const odds = runner.odds || {};
+    const winPrice = parseFloat(odds.fixed_win || 0);
+    if (winPrice > 1.0) {
+      oddsByTabNo[name] = { price: winPrice, tabNo: tabNo };
+    }
+  });
+
+  console.log('LB odds for', venueName, 'R' + raceNum + ':', JSON.stringify(oddsByTabNo).substring(0, 200));
+  return { oddsByName: oddsByTabNo, trackCondition: trackCondition };
+}
+
+// Apply Ladbrokes odds to runners array
+async function applyLbOdds(runners, venueName, raceNum) {
+  if (!config.lbFrom) return runners; // only use if configured
+
+  const lbData = await fetchLbRaceOdds(venueName, raceNum);
+  if (!lbData || !lbData.oddsByName) return runners;
+
+  const oddsByName = lbData.oddsByName;
+
+  return runners.map(function(r) {
+    const key = (r.runnerName || r.name || '').toLowerCase().replace(/[^a-z]/g, '');
+    // Try exact match first
+    let lbEntry = oddsByName[key];
+    // Try first 6 chars if no exact match
+    if (!lbEntry) {
+      const keyShort = key.substring(0, 7);
+      for (const k of Object.keys(oddsByName)) {
+        if (k.substring(0, 7) === keyShort) { lbEntry = oddsByName[k]; break; }
+      }
+    }
+    if (lbEntry && lbEntry.price > 1) {
+      return Object.assign({}, r, {
+        bfOdds: lbEntry.price,
+        oddsSource: 'LB'
+      });
+    }
+    return r;
+  });
+}
+
+// ─── FORMFAV API ─────────────────────────────────────────────
+const FF_BASE = 'https://api.formfav.com/v1';
+
+async function ffGet(endpoint, params) {
+  if (!config.ffKey) return null;
+  let url = FF_BASE + endpoint;
+  if (params) {
+    const qs = Object.entries(params).map(function(e) {
+      return encodeURIComponent(e[0]) + '=' + encodeURIComponent(e[1]);
+    }).join('&');
+    url += '?' + qs;
+  }
+  try {
+    const res = await fetch(PROXY + encodeURIComponent(url), {
+      headers: { 'x-api-key': config.ffKey, 'accept': 'application/json' }
+    });
+    if (!res.ok) { console.warn('FormFav error:', res.status, endpoint); return null; }
+    return await res.json();
+  } catch(e) {
+    console.warn('FormFav fetch error:', e.message);
+    return null;
+  }
+}
+
+// Fetch FormFav data for a race and return enriched runner data
+async function fetchFormFavRace(venueName, raceNum, raceDate) {
+  if (!config.ffKey) return null;
+
+  // Clean track name for FormFav (remove state suffixes etc)
+  const track = venueName.replace(/\s*(Scarpside|Lakeside|Hillside|Heath|Acton|Kensington|Parks)\s*/gi, ' ').trim();
+  const date = raceDate || new Date().toISOString().split('T')[0];
+
+  const data = await ffGet('/form', {
+    country: 'au',
+    track: track,
+    race: String(raceNum),
+    date: date
+  });
+
+  if (!data || !data.runners) {
+    console.log('FormFav: no data for', track, 'R' + raceNum);
+    return null;
+  }
+
+  console.log('FormFav: loaded', data.runners.length, 'runners for', track, 'R' + raceNum,
+    '| Class:', data.raceClass, '| Dist:', data.distance, '| Going:', data.condition);
+
+  return data;
+}
+
+// Apply FormFav enrichment to runners array
+function applyFormFavData(runners, ffData) {
+  if (!ffData || !ffData.runners) return runners;
+
+  return runners.map(function(r) {
+    const name = (r.runnerName || r.name || '').toLowerCase().replace(/[^a-z]/g, '');
+
+    // Match by name
+    const ffRunner = ffData.runners.find(function(f) {
+      const fname = (f.name || '').toLowerCase().replace(/[^a-z]/g, '');
+      return fname === name || fname.substring(0, 8) === name.substring(0, 8);
+    });
+
+    if (!ffRunner || ffRunner.scratched) return r;
+
+    // Extract speed map data
+    const speedMap = ffRunner.speedMap || {};
+    const runningStyle = speedMap.runningStyle || null; // P=pace, M=mid, B=back
+    const settlingPos = speedMap.settlingPosition || null;
+    const earlySpeed = speedMap.earlySpeedIndex || null;
+
+    // Extract class profile
+    const classProfile = ffRunner.classProfile || {};
+    const withinOptimal = (ffRunner.raceClassFit || {}).withinOptimalRange;
+    const classFit = (ffRunner.raceClassFit || {}).assessment || '';
+    const currentRating = classProfile.currentRating || 0;
+    const ratingTrend = classProfile.trend || '';
+
+    // Extract decorators (form badges)
+    const decorators = ffRunner.decorators || [];
+    const hasJockeyTrainerCombo = decorators.some(function(d) { return d.type === 'jockey_trainer_combo'; });
+    const isLastStartWinner = decorators.some(function(d) { return d.type === 'last_start_winner'; });
+    const hasWeightDrop = decorators.some(function(d) { return d.type === 'weight_drop'; });
+    const isLightlyRaced = decorators.some(function(d) { return d.type === 'lightly_raced'; });
+    const hasGearChange = !!ffRunner.gearChange;
+    const gearChangeText = ffRunner.gearChange || '';
+
+    // Get jockey/trainer combo win rate if available
+    const comboDecorator = decorators.find(function(d) { return d.type === 'jockey_trainer_combo'; });
+    const comboWinRate = comboDecorator ? parseFloat((comboDecorator.detail || '0').split('%')[0].split('(')[1] || 0) / 100 : null;
+
+    return Object.assign({}, r, {
+      // Speed map
+      ffRunningStyle: runningStyle,
+      ffSettlingPos: settlingPos,
+      ffEarlySpeed: earlySpeed,
+      // Class
+      ffClassRating: currentRating,
+      ffWithinOptimal: withinOptimal,
+      ffClassFit: classFit,
+      ffRatingTrend: ratingTrend,
+      // Decorators
+      ffLastStartWinner: isLastStartWinner,
+      ffWeightDrop: hasWeightDrop,
+      ffJockeyTrainerCombo: hasJockeyTrainerCombo,
+      ffComboWinRate: comboWinRate,
+      ffGearChange: hasGearChange,
+      ffGearChangeText: gearChangeText,
+      ffLightlyRaced: isLightlyRaced,
+      // Raw decorators for display
+      ffDecorators: decorators
+    });
+  });
+}
+
+// Score bonus/penalty from FormFav data (applied to conditions score)
+function calcFormFavBonus(runner, raceDistance) {
+  let bonus = 0;
+
+  // Running style — front runners advantage in sprints
+  if (runner.ffRunningStyle === 'P') {
+    bonus += raceDistance <= 1200 ? 8 : raceDistance <= 1600 ? 4 : 2;
+  } else if (runner.ffRunningStyle === 'B') {
+    bonus += raceDistance <= 1200 ? -6 : raceDistance <= 1600 ? -2 : 2; // closers ok in staying
+  }
+
+  // Class fit — within optimal range is a positive signal
+  if (runner.ffWithinOptimal === true) bonus += 5;
+  if (runner.ffClassFit === 'out_of_depth') bonus -= 8;
+
+  // Rating trend
+  if (runner.ffRatingTrend === 'rising') bonus += 4;
+  if (runner.ffRatingTrend === 'falling') bonus -= 4;
+
+  // Decorators
+  if (runner.ffLastStartWinner) bonus += 6;
+  if (runner.ffWeightDrop) bonus += 3;
+  if (runner.ffJockeyTrainerCombo && runner.ffComboWinRate > 0.20) bonus += 5;
+  if (runner.ffGearChange) bonus -= 2; // gear changes are uncertain — slight caution
+
+  return Math.max(-15, Math.min(15, bonus)); // cap at ±15
+}
+
+// ─── WA TRACK FILTER ────────────────────────────────────────
+const WA_TRACKS = ['ascot', 'belmont', 'belmont park', 'ascot racecourse'];
+
+function isWAMetro(meeting) {
+  const venue = (meeting.venueName || meeting.trackName || meeting.venue || '').toLowerCase();
+  return WA_TRACKS.some(t => venue.includes(t));
+}
+
+// Broader WA detection (metro + country) — used for jockey-specific bonuses like William Pike
+const WA_ALL_TRACKS = [
+  'ascot', 'belmont', 'belmont park', 'pinjarra', 'northam', 'york', 'narrogin',
+  'albany', 'bunbury', 'geraldton', 'kalgoorlie', 'esperance', 'mount barker',
+  'katanning', 'merredin', 'moora', 'broome', 'carnarvon', 'derby', 'kununurra',
+  'gascoyne', 'laverton', 'newman', 'meekatharra', 'beverley', 'williams',
+  'pingelly', 'wagin', 'lake grace', 'corrigin', 'bridgetown', 'collie',
+  'donnybrook', 'denmark', 'mount magnet', 'leonora', 'kojonup'
+];
+
+function isWaRaceVenue(venueName) {
+  const venue = (venueName || '').toLowerCase();
+  return WA_ALL_TRACKS.some(t => venue.includes(t));
+}
+
+// ─── SCORING ENGINE ─────────────────────────────────────────
+function scoreRunner(runner, raceConditions) {
+  let score = 0;
+  const weights = { form: 30, class: 12, trackFit: 20, conditions: 15, connections: 13, barrier: 10 };
+
+  // ── 1. FORM — last 5 starts, recency weighted ─────────────
+  const starts = runner.last5Starts || [];
+  const startRunners = runner.last5Runners || [];
+  const formRuns = runner.formRuns || [];
+  let formScore = 40;
+  if (starts.length > 0) {
+    const sc = starts.slice(0,5).map(function(pos, i) {
+      const cnt = startRunners[i] || 12;
+      const w = [1.0, 0.85, 0.7, 0.55, 0.4][i];
+      const p = parseInt(pos) || 99;
+      if (p === 99) return 0;
+      return Math.max(0, (cnt - p) / Math.max(1, cnt - 1)) * w;
+    });
+    formScore = (sc.reduce(function(a,b){return a+b;},0) / sc.length) * 100;
+  }
+  score += (formScore / 100) * weights.form;
+
+  // ── 2. CLASS — raceClass tier + prize money ───────────────
+  let classScore = 50;
+  const raceClass = (raceConditions.raceClass || '').toUpperCase();
+  const horseClass = (runner.raceClass || '').toUpperCase();
+  // Class tier map: higher = better class
+  const classTier = function(c) {
+    if (c.includes('G1') || c.includes('GROUP 1')) return 10;
+    if (c.includes('G2') || c.includes('GROUP 2')) return 9;
+    if (c.includes('G3') || c.includes('GROUP 3')) return 8;
+    if (c.includes('LR') || c.includes('LISTED')) return 7;
+    if (c.includes('BM') || c.includes('OPEN')) {
+      const n = parseInt(c.replace(/\D/g,'')) || 70;
+      return Math.min(6, Math.max(1, Math.floor(n / 15)));
+    }
+    if (c.includes('C4') || c.includes('MDN') && c.includes('SW')) return 3;
+    if (c.includes('C3')) return 3;
+    if (c.includes('C2')) return 2;
+    if (c.includes('C1')) return 1;
+    if (c.includes('MDN')) return 0;
+    return 3;
+  };
+  const avgPrize = runner.averagePrizemoney || 0;
+  const racePrize = raceConditions.prizeMoney || 0;
+  if (racePrize > 0 && avgPrize > 0) {
+    const ratio = avgPrize / racePrize;
+    if (ratio > 1.4) classScore = 82;
+    else if (ratio > 1.0) classScore = 68;
+    else if (ratio > 0.7) classScore = 52;
+    else if (ratio > 0.5) classScore = 38;
+    else classScore = 25;
+  }
+  score += (classScore / 100) * weights.class;
+
+  // ── 3. TRACK & CONDITIONS FIT ────────────────────────────
+  let trackScore = 50;
+  const raceDistance = raceConditions.raceDistance || raceConditions.distance || 1200;
+  const going = (raceConditions.trackCondition || 'Good').toLowerCase().split('(')[0].trim();
+  const raceSynthetic = isSyntheticTrack(raceConditions.venueName || '', raceConditions.trackSurface || '');
+  let goingKey;
+  if (raceSynthetic) {
+    goingKey = 'syntheticRecord';
+  } else {
+    goingKey = going.includes('firm') ? 'firmRecord'
+      : going.includes('soft') ? 'softRecord'
+      : going.includes('heavy') ? 'heavyRecord' : 'goodRecord';
+  }
+  const goingRec = runner[goingKey] || {};
+  if (goingRec.starts >= 1) {
+    const gWinRate = goingRec.firsts / goingRec.starts;
+    const gPlaceRate = (goingRec.firsts + goingRec.seconds + goingRec.thirds) / goingRec.starts;
+    if (gWinRate > 0.3) trackScore += 22;
+    else if (gWinRate > 0.15) trackScore += 12;
+    else if (gPlaceRate > 0.5) trackScore += 8;
+    else if (goingRec.starts >= 3 && gWinRate === 0 && gPlaceRate < 0.2) trackScore -= 12;
+  }
+  // Distance record
+  const distStarts = runner.distanceStarts || 0;
+  const distWins = runner.distanceWins || 0;
+  const distPlaces = runner.distancePlaces || 0;
+  if (distStarts >= 2) {
+    const dWinRate = distWins / distStarts;
+    const dPlaceRate = (distWins + distPlaces) / distStarts;
+    if (dWinRate > 0.3) trackScore += 18;
+    else if (dPlaceRate > 0.5) trackScore += 9;
+    else if (distStarts >= 4 && dWinRate === 0) trackScore -= 8;
+  }
+
+  // Distance step-up penalty — horse has zero record at today's distance bucket
+  // and today's race is notably long (1800m+), where unproven stayers are a real risk
+  // (e.g. Barecove Rock: never run past 1650m, stepped up to 2100m, ran very poorly)
+  const careerStarts = runner.careerStarts || 0;
+  if (distStarts === 0 && careerStarts >= 3 && raceDistance >= 1800) {
+    trackScore -= 15; // meaningful career history but zero proven form at this trip
+  } else if (distStarts === 0 && careerStarts >= 3 && raceDistance >= 1600) {
+    trackScore -= 8; // mild caution at extended trips
+  }
+  // Track+distance combined record (strongest signal)
+  const tdRec = runner.trackDistRecord || {};
+  if (tdRec.starts >= 2) {
+    const tdRate = tdRec.firsts / tdRec.starts;
+    const tdPlaceRate = (tdRec.firsts + (tdRec.seconds||0) + (tdRec.thirds||0)) / tdRec.starts;
+    if (tdRate > 0.3) trackScore += 18;
+    else if (tdPlaceRate > 0.5) trackScore += 9;
+  }
+  // Track record
+  const trkStarts = runner.trackStarts || 0;
+  const trkWins = runner.trackWins || 0;
+  const trkPlaces = runner.trackPlaces || 0;
+  if (trkStarts >= 2) {
+    if (trkWins / trkStarts > 0.3) trackScore += 10;
+    else if ((trkWins + trkPlaces) / trkStarts > 0.5) trackScore += 5;
+  }
+  score += (Math.min(100, Math.max(0, trackScore)) / 100) * weights.trackFit;
+
+  // ── 4. CONDITIONS FACTORS (rail, weight, freshness) ───────
+  let condScore = 50;
+
+  // FormFav bonus — speed map, class fit, decorators
+  if (runner.ffRunningStyle !== undefined || runner.ffWithinOptimal !== undefined) {
+    const ffBonus = calcFormFavBonus(runner, raceConditions.raceDistance);
+    condScore += ffBonus;
+    if (Math.abs(ffBonus) > 2) console.log('FF bonus for', runner.runnerName, ':', ffBonus,
+      '| Style:', runner.ffRunningStyle, '| Fit:', runner.ffClassFit);
+  }
+
+
+  // Rail position — wide rail favours on-pace horses, penalises wide barriers
+  const rail = (raceConditions.railPosition || 'True').toLowerCase();
+  const railMetres = (function() {
+    const m = rail.match(/\+?(\d+)m/);
+    return m ? parseInt(m[1]) : 0;
+  })();
+  const barrier = runner.barrierNumber || runner.barrier || 8;
+  const fieldSize = raceConditions.numberOfRunners || 12;
+  if (railMetres >= 6) {
+    // Wide rail — inside barriers massively advantaged in sprints
+    if (raceDistance < 1400) {
+      if (barrier <= 4) condScore += 20;
+      else if (barrier <= 7) condScore += 8;
+      else condScore -= 12;
+    } else {
+      if (barrier <= 5) condScore += 10;
+      else if (barrier > 10) condScore -= 6;
+    }
+  } else if (railMetres >= 3) {
+    if (raceDistance < 1400) {
+      if (barrier <= 5) condScore += 12;
+      else if (barrier > 9) condScore -= 8;
+    }
+  }
+  // True rail — more even, slight inside advantage
+  else {
+    if (barrier <= 4) condScore += 6;
+    else if (barrier > fieldSize * 0.75) condScore -= 4;
+  }
+
+  // Weight — compare to field average (heavier = disadvantaged)
+  const weight = runner.weight || 57;
+  const avgWeight = raceConditions.avgWeight || 57;
+  const weightDiff = weight - avgWeight;
+  if (weightDiff > 3) condScore -= Math.min(15, weightDiff * 2);
+  else if (weightDiff < -2) condScore += Math.min(10, Math.abs(weightDiff) * 1.5);
+
+  // First-up / second-up record
+  const firstUp = runner.firstUpRecord || {};
+  const secondUp = runner.secondUpRecord || {};
+  const daysSinceLast = runner.daysSinceLast || 0;
+  if (daysSinceLast > 60 && firstUp.starts >= 2) {
+    const fuRate = (firstUp.firsts + (firstUp.seconds||0) + (firstUp.thirds||0)) / firstUp.starts;
+    if (fuRate > 0.5) condScore += 12;
+    else if (fuRate < 0.2) condScore -= 10;
+  } else if (daysSinceLast > 21 && daysSinceLast <= 60 && secondUp.starts >= 2) {
+    const suRate = (secondUp.firsts + (secondUp.seconds||0) + (secondUp.thirds||0)) / secondUp.starts;
+    if (suRate > 0.5) condScore += 8;
+    else if (suRate < 0.2) condScore -= 6;
+  }
+
+  // Days since last run — very short back-up can be negative
+  if (daysSinceLast > 0 && daysSinceLast < 6) condScore -= 8;
+
+  score += (Math.min(100, Math.max(0, condScore)) / 100) * weights.conditions;
+
+  // ── 5. CONNECTIONS — jockey, trainer, horse career stats ──
+  let connScore = 50;
+  const jockeyWinPct = runner.jockeyWinPercent || 0;
+  const trainerWinPct = runner.trainerWinPercent || 0;
+  if (jockeyWinPct > 22) connScore += 20;
+  else if (jockeyWinPct > 15) connScore += 12;
+  else if (jockeyWinPct > 10) connScore += 5;
+
+  // William Pike — dominant WA jockey, gets the best rides at WA tracks
+  // Only applies at WA tracks (metro + country) — his presence elsewhere isn't the same signal
+  const jockeyName = String(runner.jockeyName || (typeof runner.jockey === 'string' ? runner.jockey : '') || '').toLowerCase();
+  const isPike = jockeyName.includes('william pike') || jockeyName.includes('w pike') || jockeyName === 'pike';
+  if (isPike && raceConditions.isWaRace) {
+    connScore += 18;
+  }
+  if (trainerWinPct > 22) connScore += 15;
+  else if (trainerWinPct > 15) connScore += 8;
+  else if (trainerWinPct > 10) connScore += 4;
+  const horseWinPct = runner.winPct || 0;
+  const horsePlacePct = runner.placePct || 0;
+  if (horseWinPct > 30) connScore += 12;
+  else if (horseWinPct > 20) connScore += 7;
+  else if (horsePlacePct > 50) connScore += 4;
+  score += (Math.min(100, connScore) / 100) * weights.connections;
+
+  // ── 6. BARRIER DRAW ───────────────────────────────────────
+  // (already partially handled in conditions above for rail, this is pure draw)
+  let barrierScore = 50;
+  if (raceDistance < 1400) {
+    if (barrier <= 3) barrierScore = 80;
+    else if (barrier <= 6) barrierScore = 65;
+    else if (barrier <= 9) barrierScore = 48;
+    else barrierScore = 32;
+  } else if (raceDistance < 1800) {
+    if (barrier <= 5) barrierScore = 68;
+    else if (barrier <= 9) barrierScore = 56;
+    else barrierScore = 44;
+  } else {
+    barrierScore = Math.max(40, 70 - (barrier * 2));
+  }
+  score += (barrierScore / 100) * weights.barrier;
+
+  return Math.round(score * 10) / 10;
+}
+
+function scoresToProbabilities(runners) {
+  const scores = runners.map(r => Math.max(0.1, r.algoScore || 0));
+  const total = scores.reduce((a, b) => a + b, 0);
+  return runners.map((r, i) => ({
+    ...r,
+    impliedProb: scores[i] / total
+  }));
+}
+
+function calcExpectedValue(impliedProb, bfOdds) {
+  if (!bfOdds || bfOdds <= 1) return null;
+  return (impliedProb * (bfOdds - 1)) - (1 - impliedProb);
+}
+
+function calcKellyStake(ev, prob, odds, bank, maxPct) {
+  if (ev <= 0) return 0;
+  const b = odds - 1;
+  const kelly = (b * prob - (1 - prob)) / b;
+  const fractionalKelly = kelly * 0.25; // quarter Kelly for safety
+  const maxStake = (bank * maxPct) / 100;
+  return Math.min(Math.max(0, fractionalKelly * bank), maxStake);
+}
+
+function getTier(ev, score) {
+  // EV-based tiers kept for reference but odds filter applied separately
+  if (ev > 0.15 && score >= 55) return 'A';
+  if (ev > 0.05 && score >= 45) return 'B';
+  if (ev > 0 && score >= 38) return 'C';
+  return 'SKIP';
+}
+
+// Saturday top 10 selection — pick best bets across all races
+let saturdayBetPool = [];
+let manualPins = []; // manually pinned horses added to bet pool night-before
+
+function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo) {
+  const key = venueName + '_R' + raceNum + '_' + runnerId;
+  const idx = manualPins.findIndex(p => p.key === key);
+  if (idx >= 0) {
+    // Unpin — also remove from tracker if it exists and has no result yet
+    manualPins.splice(idx, 1);
+    const bets = loadBets();
+    const trackerIdx = bets.findIndex(b => b._pinKey === key && !b.result);
+    if (trackerIdx >= 0) {
+      bets.splice(trackerIdx, 1);
+      saveBets(bets);
+      renderTracker();
+    }
+    showToast(runnerName + ' removed from picks', '');
+  } else {
+    manualPins.push({
+      key, runnerId, runnerName, raceName, venueName, raceNum, algoScore, scoreGap, tabNo,
+      pinnedAt: new Date().toISOString()
+    });
+    // Log directly to results tracker with TBC odds
+    const bets = loadBets();
+    const today = (selectedRace && selectedRace.startTime)
+      ? new Date(selectedRace.startTime).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' })
+      : new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+    const exists = bets.find(b => b._pinKey === key);
+    if (!exists) {
+      const bet = {
+        id: Date.now() + '_' + Math.random().toString(36).substr(2,5),
+        _pinKey: key,
+        date: today,
+        track: venueName,
+        raceNum: String(raceNum),
+        raceName: raceName,
+        raceId: venueName + '_R' + raceNum,
+        horse: runnerName,
+        horseNum: String(tabNo || ''),
+        distance: 0,
+        runnerId: runnerId,
+        tier: 'A',
+        betType: 'WIN',
+        odds: 0, // TBC — update when price available
+        stake: config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 10,
+        ev: 0,
+        result: null,
+        pnl: null,
+        timing: 'night',
+        comment: '📌 Manually pinned — update odds before race'
+      };
+      bets.unshift(bet);
+      saveBets(bets);
+      renderTracker();
+    }
+    showToast('📌 ' + runnerName + ' pinned to bet list', 'success');
+  }
+  // Re-render pin buttons
+  document.querySelectorAll('[data-pin-key="' + key + '"]').forEach(btn => {
+    const pinned = manualPins.some(p => p.key === key);
+    btn.textContent = pinned ? '📌' : '📍';
+    btn.style.opacity = pinned ? '1' : '0.4';
+    btn.title = pinned ? 'Unpin from bet list' : 'Pin to bet list';
+  });
+  injectManualPinsIntoBetPool();
+}
+
+function injectManualPinsIntoBetPool() {
+  // Remove any previously injected manual pins
+  saturdayBetPool = saturdayBetPool.filter(b => !b.isManualPin);
+  // Add current manual pins with placeholder odds
+  manualPins.forEach(p => {
+    saturdayBetPool.push({
+      runner: {
+        runnerName: p.runnerName,
+        algoScore: p.algoScore || 0,
+        scoreGap: p.scoreGap || 0,
+        bfOdds: null,
+        _confidence: (p.algoScore || 0) + ((p.scoreGap || 0) * 2),
+      },
+      tier: 'A',
+      isManualPin: true,
+      venueName: p.venueName,
+      raceNum: p.raceNum,
+      raceName: p.raceName,
+      startTime: '',
+      result: null,
+      finishPos: null
+    });
+  });
+}
+
+function calcBetConfidence(runner) {
+  const score = runner.algoScore || 0;
+  const gap = runner.scoreGap || 0;
+  const odds = runner.bfOdds || 3;
+  const oddsValue = odds >= 2 && odds <= 4 ? 10 : odds >= 4 && odds <= 6 ? 5 : 0;
+  return Math.round((score + (gap * 2) + oddsValue) * 10) / 10;
+}
+
+async function sendTop10ToDiscord() {
+  if (!config.discordWebhook) {
+    showToast('Add Discord webhook in Settings first', 'error');
+    return;
+  }
+  if (!window._satTop10 || window._satTop10.length === 0) {
+    showToast('No top 10 to send — click through all races first', 'error');
+    return;
+  }
+
+  const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
+  const dayName = new Date().toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Sydney' });
+
+  const lines = window._satTop10.map(function(b, i) {
+    const r = b.runner;
+    const tierEmoji = b.tier === 'A' ? '🥇' : '🥈';
+    const odds = r.bfOdds ? '$' + r.bfOdds.toFixed(2) : '—';
+    const oddsSource = r.oddsSource === 'LB' ? 'LB' : r.oddsSource === 'SP' ? 'SP' : 'BF';
+    return (i+1) + '. **' + (r.runnerName || r.name || '?') + '** — ' +
+      (b.venueName || '') + ' R' + (b.raceNum || '?') + ' · ' +
+      tierEmoji + ' ' + b.tier + ' · ' + odds + ' (' + oddsSource + ') · Score: ' + (r.algoScore || 0).toFixed(1);
+  }).join('\n');
+
+  const embed = {
+    embeds: [{
+      color: 0xF0B429,
+      title: '🏆 Metro Top 10 — ' + dayName + ' ' + today,
+      description: lines,
+      fields: [
+        { name: '📊 Selections', value: window._satTop10.length + ' bets', inline: true },
+        { name: '🎯 Strategy', value: 'Night before prices · Ladbrokes fixed odds', inline: true }
+      ],
+      footer: { text: 'Form Lab · Ranked by confidence score' },
+      timestamp: new Date().toISOString()
+    }]
+  };
+
+  try {
+    await fetch(PROXY + encodeURIComponent(config.discordWebhook), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(embed)
+    });
+    showToast('Top 10 sent to Discord!', 'success');
+  } catch(e) {
+    console.warn('Discord top 10 failed:', e.message);
+    showToast('Discord send failed', 'error');
+  }
+}
+
+function setSatResult(idx, result) {
+  if (!window._satTop10 || !window._satTop10[idx]) return;
+  window._satTop10[idx].result = window._satTop10[idx].result === result ? null : result;
+  renderSatTop10();
+}
+
+function setSatFinishPos(idx, pos) {
+  if (!window._satTop10 || !window._satTop10[idx]) return;
+  window._satTop10[idx].finishPos = parseInt(pos) || null;
+}
+
+function exportSatTop10CSV() {
+  if (!window._satTop10 || window._satTop10.length === 0) return;
+  const today = new Date().toISOString().split('T')[0];
+  const headers = ['Rank','Date','Track','Race','Horse','Tier','Odds','AlgoScore','ScoreGap','Confidence','FinishPos','Result'];
+  const rows = window._satTop10.map(function(b, i) {
+    const r = b.runner;
+    return [
+      i+1, today,
+      b.venueName || '',
+      'R' + (b.raceNum || '?'),
+      (r.tabNo ? r.tabNo + '. ' : '') + (r.runnerName || r.name || ''),
+      b.tier,
+      r.bfOdds ? r.bfOdds.toFixed(2) : '',
+      (r.algoScore || 0).toFixed(1),
+      (r.scoreGap || 0).toFixed(1),
+      (r._confidence || 0).toFixed(1),
+      b.finishPos || '',
+      b.result || ''
+    ].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'metro_top10_' + today + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Top 10 CSV exported', 'success');
+}
+
+function renderSatTop10() {
+  const body = document.getElementById('satTop10Body');
+  if (saturdayBetPool.length === 0) {
+    body.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px">Click through all races first to populate the top 10</p>';
+    return;
+  }
+
+  // Deduplicate by horse name and sort by confidence
+  const seen = new Set();
+  const unique = saturdayBetPool.filter(function(b) {
+    const key = (b.race ? b.race.venueName || '' : '') + '_' + (b.runner.runnerName || '');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const top10 = unique
+    .sort(function(a, b) { return (b.runner._confidence || 0) - (a.runner._confidence || 0); })
+    .slice(0, 10);
+
+  // Save top10 to window for result recording
+  window._satTop10 = top10;
+
+  const th = function(label) {
+    return '<th style="text-align:left;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);border-bottom:1px solid var(--border)">' + label + '</th>';
+  };
+
+  body.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+    '<thead><tr>' + th('#') + th('Track') + th('Race') + th('Horse') + th('Tier') + th('Odds') + th('Score') + th('Gap') + th('Pos') + th('Result') + '</tr></thead><tbody>' +
+    top10.map(function(b, i) {
+      const r = b.runner;
+      const tierClass = b.tier === 'A' ? 'tier-a' : 'tier-b';
+      const bg = i < 3 ? 'background:rgba(240,180,41,0.04)' : '';
+      const borderLeft = i === 0 ? 'border-left:3px solid var(--gold)' : '';
+      const resultBtns =
+        '<button onclick="setSatResult(' + i + ',&quot;W&quot;)" class="result-btn ' + (b.result==='W'?'win':'') + '">W</button>' +
+        '<button onclick="setSatResult(' + i + ',&quot;P&quot;)" class="result-btn ' + (b.result==='P'?'place':'') + '">P</button>' +
+        '<button onclick="setSatResult(' + i + ',&quot;L&quot;)" class="result-btn ' + (b.result==='L'?'loss':'') + '">L</button>' +
+        '<button onclick="setSatResult(' + i + ',&quot;S&quot;)" class="result-btn ' + (b.result==='S'?'scratch':'') + '">S</button>';
+      const finishInput = '<input type="number" min="1" max="30" value="' + (b.finishPos || '') + '" placeholder="pos" ' +
+        'onchange="setSatFinishPos(' + i + ',this.value)" ' +
+        'style="width:44px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;padding:2px 4px;text-align:center">';
+      return '<tr style="' + bg + ';border-bottom:1px solid var(--border)">' +
+        '<td style="padding:8px 10px;font-family:DM Mono,monospace;color:var(--gold);font-weight:600;' + borderLeft + '">' + (i+1) + '</td>' +
+        '<td style="padding:8px 10px">' + (b.venueName || '') + '</td>' +
+        '<td style="padding:8px 10px;font-size:11px;color:var(--text2)">R' + (b.raceNum || '?') + '</td>' +
+        '<td style="padding:8px 10px;font-weight:600">' + (b.isManualPin ? '<span style="font-size:11px;margin-right:4px">📌</span>' : '') + (r.tabNo ? '<span style="font-size:10px;color:var(--text3);margin-right:4px">' + r.tabNo + '</span>' : '') + (r.runnerName || r.name || '?') + '</td>' +
+        '<td style="padding:8px 10px"><span class="tier-badge ' + tierClass + '">' + b.tier + '</span></td>' +
+        '<td style="padding:8px 10px;font-family:DM Mono,monospace;color:var(--gold);">' + (r.bfOdds ? '$' + r.bfOdds.toFixed(2) : (b.isManualPin ? '<span style="color:var(--text3);font-size:11px">TBC</span>' : '—')) + '</td>' +
+        '<td style="padding:8px 10px;font-family:DM Mono,monospace">' + (r.algoScore || 0).toFixed(1) + '</td>' +
+        '<td style="padding:8px 10px;font-family:DM Mono,monospace;color:var(--green)">+' + (r.scoreGap || 0).toFixed(1) + '</td>' +
+        '<td style="padding:8px 10px">' + finishInput + '</td>' +
+        '<td style="padding:8px 10px">' + resultBtns + '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:0 4px">' +
+    '<p style="font-size:11px;color:var(--text3);margin:0">Ranked by confidence score. Click through all races first.</p>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button class="btn" onclick="sendTop10ToDiscord()" style="font-size:12px;background:rgba(88,101,242,0.15);border-color:rgba(88,101,242,0.4);color:#7289da">📨 Send to Discord</button>' +
+    '<button class="btn" onclick="exportSatTop10CSV()" style="font-size:12px">Export CSV</button>' +
+    '</div>' +
+    '</div>';
+}
+// Ranked by a combined confidence score: algoScore + (scoreGap * 2) + oddsValue
+function calcBetConfidence(runner, raceConditions) {
+  const score = runner.algoScore || 0;
+  const gap = runner.scoreGap || 0;
+  const odds = runner.bfOdds || 3;
+  // Higher score + bigger gap + reasonable odds = more confidence
+  // Penalise very short odds (under $2) and longer odds (over $5)
+  const oddsValue = odds >= 2 && odds <= 4 ? 10 : odds >= 4 && odds <= 6 ? 5 : 0;
+  return score + (gap * 2) + oddsValue;
+}
+
+// Recommendation engine — score-rank + odds range based
+// A tier: #1 scorer in field, no gap requirement — rank is the signal
+// B tier: metro only, top 2 scorer
+function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
+  const odds = runner.bfOdds || 0;
+  const score = runner.algoScore || 0;
+  // Use passed race/meeting if available, fall back to selected
+  const currentMeeting = meetingOverride || selectedMeeting;
+  const currentRace = raceOverride || selectedRace;
+  const isMetro = currentMeeting && isMetroTrack(currentMeeting.venueName || '');
+  const isProvincial = currentMeeting && isProvincialTrack(currentMeeting.venueName || '');
+  // Use race date not current date — handles browsing next day's races the night before
+  const raceDate = selectedRace ? new Date(selectedRace.startTime || Date.now()) : new Date();
+  const isSaturday = raceDate.getDay() === 6;
+  const isWednesday = raceDate.getDay() === 3;
+
+  // Hard odds filter
+  if (odds < 1.20 || odds > 8) return 'SKIP';
+
+  // Rank this runner's score in the field
+  const sortedScores = allRunners
+    .map(function(r) { return r.algoScore || 0; })
+    .sort(function(a, b) { return b - a; });
+  const rank = sortedScores.indexOf(score) + 1;
+  const scoreGap = (sortedScores[0] || 0) - (sortedScores[1] || 0);
+  runner.scoreGap = scoreGap;
+
+  // A tier — #1 ranked score, odds $1.20-$6
+  // Score gap filter by track type and race class
+  const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
+  // SA state override — model underperforms in SA, require clear standout across all track types
+  // Applies to Morphettville, Morphettville Parks, Gawler, Balaklava, Murray Bridge, Strathalbyn etc.
+  // Change SA_MIN_GAP back to 0 if SA performance improves in spring
+  const SA_MIN_GAP = 4;
+  const isSAVenue = (function() {
+    const v = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
+    return v.includes('morphettville') || v.includes('gawler') || v.includes('balaklava') ||
+           v.includes('murray bridge') || v.includes('strathalbyn') || v.includes('mt gambier') ||
+           v.includes('naracoorte') || v.includes('port augusta') || v.includes('murray bridge');
+  })();
+
+  let minGap;
+  if (isSAVenue) {
+    minGap = SA_MIN_GAP; // SA — all track types require clear standout
+  } else if (isMetro) {
+    // Winter Wednesday (June-Aug) — weaker fields, require a clear standout
+    // Change WINTER_WEDNESDAY_GAP to 0 in spring/autumn when metro Wednesdays strengthen
+    const WINTER_WEDNESDAY_GAP = 2;
+    const month = new Date().getMonth() + 1; // 1=Jan, 12=Dec
+    const isWinterMonth = month >= 6 && month <= 8;
+    if (isWednesday && isWinterMonth) {
+      minGap = WINTER_WEDNESDAY_GAP;
+    } else {
+      minGap = 0; // premier metro — no gap required, strong form data
+    }
+  } else if (isProvincial) {
+    minGap = 3; // provincial — require clear standout, field quality inconsistent
+  } else if (prizeMoney >= 50000) {
+    minGap = 2; // stakes/listed/group country — small gap ok
+  } else if (prizeMoney >= 25000) {
+    minGap = 3; // BM70+ country — moderate gap
+  } else if (prizeMoney >= 15000) {
+    minGap = 4; // BM58-BM66 country — stronger gap needed
+  } else {
+    minGap = 5; // low class country — need clear standout
+  }
+  // Exclude maiden races from A tier — low win rate confirmed over 2 weeks of data
+  // Use currentRace (passed in) not selectedRace — selectedRace may lag behind during scoring
+  const raceName = (currentRace && (currentRace.name || currentRace.raceName || '')).toLowerCase();
+  const isMaiden = raceName.includes('maiden') || raceName.includes('mdn') ||
+    raceName.includes('2yo') || raceName.includes('3yo');
+  if (isMaiden) return 'SKIP';
+
+  if (rank === 1 && odds >= 1.20 && odds <= 6 && scoreGap >= minGap) {
+    if ((isSaturday || isWednesday) && isMetro) {
+      runner._confidence = calcBetConfidence(runner);
+      // Snapshot race/meeting data using currentRace/currentMeeting to avoid reference mutation
+      saturdayBetPool.push({
+        runner: Object.assign({}, runner),
+        tier: 'A',
+        venueName: currentMeeting ? (currentMeeting.venueName || currentMeeting.trackName || '') : '',
+        raceNum: currentRace ? (currentRace.number || currentRace.raceNumber || '?') : '?',
+        raceName: currentRace ? (currentRace.name || '') : '',
+        startTime: currentRace ? (currentRace.startTime || '') : '',
+        result: null,
+        finishPos: null
+      });
+    }
+    return 'A';
+  }
+
+  // B tier — disabled by default, enabled via Settings during carnivals (Spring, Everest etc)
+  if (config.bTierEnabled && isMetro && (isSaturday || isWednesday) && rank === 2 && odds >= 4 && odds <= 7) {
+    runner._confidence = calcBetConfidence(runner);
+    saturdayBetPool.push({
+      runner: Object.assign({}, runner),
+      tier: 'B',
+      venueName: currentMeeting ? (currentMeeting.venueName || currentMeeting.trackName || '') : '',
+      raceNum: currentRace ? (currentRace.number || currentRace.raceNumber || '?') : '?',
+      raceName: currentRace ? (currentRace.name || '') : '',
+      startTime: currentRace ? (currentRace.startTime || '') : '',
+      result: null,
+      finishPos: null
+    });
+    return 'B';
+  }
+
+  return 'SKIP';
+}
+
+// ─── RENDER ─────────────────────────────────────────────────
+async function expandMeeting(race, divElement) {
+  if (!race.meetingId) return;
+  // Show loading indicator in the div
+  const origHTML = divElement.innerHTML;
+  divElement.querySelector('.race-name') && (divElement.querySelector('.race-name').textContent = 'Loading races...');
+  try {
+    const fieldData = await pfFetch('fields', { meetingId: race.meetingId });
+    const meetingData = fieldData.payLoad;
+    let meetingRaces = [];
+    if (meetingData && meetingData.races && Array.isArray(meetingData.races)) {
+      meetingRaces = meetingData.races;
+    }
+    // Restore div text
+    divElement.innerHTML = origHTML;
+    if (meetingRaces.length === 0) {
+      showToast('No races found for this meeting', '');
+      return;
+    }
+    // Store races on race object for later use
+    race._meetingRaces = meetingRaces;
+    race._meetingData = meetingData;
+    // Insert race rows after the meeting div
+    const list = document.getElementById('raceList');
+    let insertAfter = divElement;
+    meetingRaces.forEach((r, idx) => {
+      // PF uses 'number' field for race number
+      const raceNum = r.number || r.raceNumber || (idx + 1);
+      r.raceNumber = raceNum;
+      const sub = document.createElement('div');
+      sub.className = 'race-item race-sub-item';
+      sub.dataset.parentId = race.meetingId;
+      sub.style.paddingLeft = '28px';
+      sub.style.background = 'rgba(255,255,255,0.02)';
+      sub.innerHTML =
+        '<span class="race-num" style="color:var(--gold)">R' + raceNum + '</span>' +
+        '<div style="flex:1">' +
+          '<div class="race-name" style="font-size:12px">' + (r.raceName || r.name || 'Race ' + raceNum) + '</div>' +
+          '<div style="font-size:11px;color:var(--text3)">' + (r.raceDistance || r.distance || '') + 'm</div>' +
+        '</div>' +
+        '<div class="race-time">' + formatTime(r.raceTime || r.startTime || r.scheduledTime) + '</div>';
+      sub.addEventListener('click', (e) => {
+        e.stopPropagation();
+        list.querySelectorAll('.race-sub-item').forEach(s => s.classList.remove('active'));
+        sub.classList.add('active');
+        loadRaceRunners(race, r, meetingData);
+      });
+      insertAfter.after(sub);
+      insertAfter = sub;
+    });
+  } catch(e) {
+    divElement.innerHTML = origHTML;
+    showToast('Failed to load races: ' + e.message, 'error');
+  }
+}
+
+async function loadRaceRunners(meeting, race, meetingData) {
+  showLoading(document.getElementById('mainPanel'));
+  try {
+    const raceNumber = race.number || race.raceNumber || race.raceNo || 1;
+    console.log('Loading raceNumber:', raceNumber);
+    let runners = [];
+    // PF uses 'number' field — find race by matching number directly
+    if (meetingData && meetingData.races && meetingData.races.length > 0) {
+      const cachedRace = meetingData.races.find(r => Number(r.number) === Number(raceNumber));
+      console.log('Using cached race number', raceNumber, 'found:', cachedRace ? cachedRace.number : 'none', 'runners:', cachedRace ? (cachedRace.runners || []).length : 0);
+      if (cachedRace && cachedRace.runners && cachedRace.runners.length > 0) {
+        runners = cachedRace.runners;
+        Object.assign(race, cachedRace);
+      }
+    }
+    // Fallback: fetch individually — when raceNumber param sent, races[0] = that race
+    if (runners.length === 0) {
+      console.log('Fetching race', raceNumber, 'individually');
+      const fieldData = await pfFetch('fields', { meetingId: meeting.meetingId, raceNumber: raceNumber });
+      const payload = fieldData.payLoad;
+      if (payload && payload.races && payload.races.length > 0) {
+        runners = payload.races[0].runners || [];
+        Object.assign(race, payload.races[0]);
+      } else if (payload && payload.runners) {
+        runners = payload.runners;
+      }
+    }
+    // Normalise
+    runners = runners.map((r, i) => ({
+      ...r,
+      runnerNumber: r.tabNo || r.runnerNumber || (i + 1),
+      runnerName: r.name || r.runnerName || 'Unknown',
+      barrierNumber: r.barrier || r.barrierNumber || (i + 1),
+      jockeyName: (r.jockey && r.jockey.fullName) ? r.jockey.fullName.trim() : 'Unknown',
+      trainerName: (r.trainer && r.trainer.fullName) ? r.trainer.fullName.trim() : 'Unknown',
+      jockeyWinPercent: (r.jockey && r.jockey.winPercent) || 0,
+      trainerWinPercent: (r.trainer && r.trainer.winPercent) || 0,
+    }));
+    if (runners.length === 0) runners = generatePlaceholderRunners(race);
+
+    // ── Apply priceSP from form data as initial price reference ──
+    runners = runners.map(function(r) {
+      if (r.priceSP && r.priceSP > 1 && !r.bfOdds) {
+        return Object.assign({}, r, { bfOdds: r.priceSP, oddsSource: 'SP' });
+      }
+      return r;
+    });
+
+    // ── Apply Ladbrokes fixed odds (overrides SP, fills gaps in BF) ──
+    if (config.lbFrom && meeting) {
+      runners = await applyLbOdds(runners, meeting.venueName || '', race.number || race.raceNumber || 1);
+    }
+
+    // ── Fetch PF form history for each runner ───────────────
+    try {
+      const raceNum = race.number || race.raceNumber || 1;
+      const formData = await pfFetch('form', { meetingId: meeting.meetingId, raceNumber: raceNum, runs: 10 });
+      const formPayload = formData.payLoad;
+      console.log('Form payload FULL:', JSON.stringify(formPayload).substring(0, 2000));
+
+      // formPayload structure: { races: [{ runners: [{ runnerId, runs: [...] }] }] }
+      let formRunners = [];
+      if (formPayload && formPayload.races && formPayload.races.length > 0) {
+        const formRace = formPayload.races.find(function(r) { return Number(r.number) === Number(raceNum); })
+          || formPayload.races[0];
+        formRunners = formRace ? (formRace.runners || []) : [];
+      } else if (formPayload && formPayload.runners) {
+        formRunners = formPayload.runners;
+      } else if (Array.isArray(formPayload)) {
+        formRunners = formPayload;
+      }
+
+      console.log('Form runners found:', formRunners.length);
+
+      if (formRunners.length > 0) {
+        // PF form endpoint returns runners as flat array with rich stats directly on each object
+        // last10 = string of finishing positions e.g. "242x1355124x" (x = unplaced/scratched)
+        runners = runners.map(function(r) {
+          const formR = formRunners.find(function(fr) {
+            return fr.runnerId === r.runnerId ||
+              (fr.name || '').toLowerCase() === (r.runnerName || r.name || '').toLowerCase();
+          });
+          if (!formR) return r;
+
+          // Parse last10 string into positions array
+          const last10str = formR.last10 || '';
+          const last5Starts = [];
+          const last5Runners = [];
+          let count = 0;
+          for (let i = 0; i < last10str.length && count < 5; i++) {
+            const ch = last10str[i];
+            if (ch === ' ') continue; // padding
+            if (ch === 'x' || ch === 'X') {
+              last5Starts.push(99); last5Runners.push(12); count++;
+            } else {
+              const pos = parseInt(ch);
+              if (!isNaN(pos)) { last5Starts.push(pos); last5Runners.push(12); count++; }
+            }
+          }
+
+          // Going preference from going records
+          const goingRecords = [
+            { name: 'Firm', rec: formR.firmRecord },
+            { name: 'Good', rec: formR.goodRecord },
+            { name: 'Soft', rec: formR.softRecord },
+            { name: 'Heavy', rec: formR.heavyRecord },
+            { name: 'Synthetic', rec: formR.syntheticRecord },
+          ];
+          let bestGoingName = '', bestGoingRate = -1;
+          goingRecords.forEach(function(g) {
+            if (g.rec && g.rec.starts >= 2) {
+              const rate = (g.rec.firsts + g.rec.seconds) / g.rec.starts;
+              if (rate > bestGoingRate) { bestGoingRate = rate; bestGoingName = g.name; }
+            }
+          });
+
+          // Distance record
+          const distRec = formR.distanceRecord || {};
+          const distStarts = distRec.starts || 0;
+          const distWins = distRec.firsts || 0;
+          const distPlaces = (distRec.seconds || 0) + (distRec.thirds || 0);
+
+          // Track record
+          const trkRec = formR.trackRecord || {};
+          const trkStarts = trkRec.starts || 0;
+          const trkWins = trkRec.firsts || 0;
+          const trkPlaces = (trkRec.seconds || 0) + (trkRec.thirds || 0);
+
+          // Track+distance record (best signal)
+          const tdRec = formR.trackDistRecord || {};
+
+          // Jockey/trainer win %
+          const jockWinPct = (formR.jockey && formR.jockey.winPercent) || r.jockeyWinPercent || 0;
+          const trainWinPct = (formR.trainer && formR.trainer.winPercent) || r.trainerWinPercent || 0;
+
+          return Object.assign({}, r, {
+            last5Starts: last5Starts,
+            last5Runners: last5Runners,
+            last10str: last10str.trim(),
+            careerStarts: formR.careerStarts || 0,
+            careerWins: formR.careerWins || 0,
+            careerSeconds: formR.careerSeconds || 0,
+            careerThirds: formR.careerThirds || 0,
+            winPct: formR.winPct || 0,
+            placePct: formR.placePct || 0,
+            trackWins: trkWins,
+            trackStarts: trkStarts,
+            trackPlaces: trkPlaces,
+            distanceWins: distWins,
+            distanceStarts: distStarts,
+            distancePlaces: distPlaces,
+            trackDistRecord: tdRec,
+            goingPreference: bestGoingName,
+            goodRecord: formR.goodRecord,
+            softRecord: formR.softRecord,
+            heavyRecord: formR.heavyRecord,
+            firmRecord: formR.firmRecord,
+            syntheticRecord: formR.syntheticRecord,
+            firstUpRecord: formR.firstUpRecord,
+            secondUpRecord: formR.secondUpRecord,
+            averagePrizemoney: formR.prizeMoney || r.averagePrizemoney || 0,
+            weight: formR.weight || r.weight || 0,
+            jockeyWinPercent: jockWinPct,
+            trainerWinPercent: trainWinPct,
+          });
+        });
+      }
+    } catch(formErr) {
+      console.warn('Form fetch failed:', formErr.message);
+    }
+
+    // ── Fetch Betfair odds and attach to runners ──────────────
+    if (bfSessionToken && race.startTime) {
+      try {
+        // Convert PF startTime (M/D/YYYY H:MM:SS AM/PM) to ISO
+        const pfTime = new Date(race.startTime);
+        const markets = await fetchBFMarketsForRace(meeting.venueName, pfTime.toISOString());
+        if (markets.length > 0) {
+          const market = markets[0];
+          race.marketId = market.marketId;
+          console.log('BF market matched:', market.marketId, market.marketStartTime);
+          const book = await fetchBFOdds(market.marketId);
+          if (book && book.runners) {
+            // Match BF runners to PF runners by name similarity
+            runners = runners.map(function(r) {
+              const pfName = (r.runnerName || '').toLowerCase().replace(/[^a-z]/g, '');
+              const bfRunner = market.runners && market.runners.find(function(br) {
+                const bfName = (br.runnerName || '').toLowerCase().replace(/[^a-z]/g, '');
+                // Match first 6 chars
+                return pfName.substring(0,6) === bfName.substring(0,6) || pfName === bfName;
+              });
+              if (bfRunner) {
+                // Get best back price from book
+                const bookRunner = book.runners.find(function(br) { return br.selectionId === bfRunner.selectionId; });
+                if (bookRunner && bookRunner.ex && bookRunner.ex.availableToBack && bookRunner.ex.availableToBack[0]) {
+                  const bfOdds = bookRunner.ex.availableToBack[0].price;
+                  console.log('Matched', r.runnerName, '-> BF odds:', bfOdds);
+                  return Object.assign({}, r, { bfOdds: bfOdds, selectionId: bfRunner.selectionId });
+                }
+              }
+              return r;
+            });
+          }
+        }
+      } catch(bfErr) {
+        console.warn('BF odds fetch failed:', bfErr.message);
+      }
+    }
+
+    // ── Odds API fallback — fills in missing odds (esp. metro tracks) ──
+    if (config.oddsApiKey && oddsApiEvents) {
+      try {
+        const event = matchOddsAPIEvent(oddsApiEvents, meeting.venueName, new Date(race.startTime).toISOString());
+        if (event) {
+          const runnerOddsMap = extractOddsAPIRunnerOdds(event);
+          runners = runners.map(function(r) {
+            if (r.bfOdds) return r; // already have BF odds, keep them
+            const key = (r.runnerName || r.name || '').toLowerCase().replace(/[^a-z]/g,'');
+            // Try exact match first, then first 6 chars
+            let price = runnerOddsMap[key];
+            if (!price) {
+              const keyShort = key.substring(0, 6);
+              for (const k of Object.keys(runnerOddsMap)) {
+                if (k.substring(0, 6) === keyShort) { price = runnerOddsMap[k]; break; }
+              }
+            }
+            if (price) {
+              console.log('Odds API match:', r.runnerName, '->', price);
+              return Object.assign({}, r, { bfOdds: price, oddsSource: 'OddsAPI' });
+            }
+            return r;
+          });
+        }
+      } catch(oaErr) {
+        console.warn('Odds API runner match failed:', oaErr.message);
+      }
+    }
+
+    // Avg weight across field
+    const weights_arr = runners.map(function(r){ return r.weight || 57; });
+    const avgWeight = weights_arr.reduce(function(a,b){return a+b;},0) / Math.max(1, weights_arr.length);
+
+    // Days since last run
+    runners = runners.map(function(r) {
+      if (r.formRuns && r.formRuns.length > 0) {
+        const lastRun = new Date(r.formRuns[0].startTime || r.formRuns[0].raceTime || 0);
+        const days = Math.round((new Date() - lastRun) / 86400000);
+        return Object.assign({}, r, { daysSinceLast: (days > 0 && days < 500) ? days : 0,
+          secondUpRecord: r.secondUpRecord || r.formRuns[0].secondUpRecord });
+      }
+      return r;
+    });
+
+    const raceConditions = {
+      prizeMoney: race.prizeMoney || 0,
+      trackCondition: race.trackCondition || (meetingData && meetingData.expectedCondition) || 'Good',
+      raceDistance: race.distance || race.raceDistance || 1200,
+      numberOfRunners: runners.length,
+      railPosition: meeting.railPosition || 'True',
+      raceClass: race.raceClass || race.class || '',
+      avgWeight: avgWeight,
+      isWaRace: isWaRaceVenue(meeting.venueName || meeting.trackName || ''),
+      venueName: meeting.venueName || meeting.trackName || '',
+      trackSurface: meeting.trackSurface || ''
+    };
+    const fullRace = Object.assign({}, race, {
+      venueName: meeting.venueName,
+      meetingId: meeting.meetingId,
+      trackCondition: raceConditions.trackCondition,
+      railPosition: meeting.railPosition || 'True',
+      prizeMoney: raceConditions.prizeMoney,
+      raceClass: race.raceClass || race.class || '',
+      distance: race.distance || race.raceDistance || 1200
+    });
+    runners = runners.map(r => ({ ...r, algoScore: scoreRunner(r, raceConditions) }));
+    runners = scoresToProbabilities(runners);
+    runners = runners.map(r => {
+      const ev = r.bfOdds ? calcExpectedValue(r.impliedProb, r.bfOdds) : null;
+      const tier = r.bfOdds ? getRecommendation(r, runners, fullRace, meeting) : null;
+      let suggestedStake = 0, betType = 'WIN';
+      if (tier && tier !== 'SKIP' && r.bfOdds && config.bankSize) {
+        suggestedStake = config.stakingMethod === 'kelly'
+          ? calcKellyStake(ev, r.impliedProb, r.bfOdds, config.bankSize, config.maxStakePct)
+          : (config.bankSize * (config.maxStakePct / 100));
+        // E/W decision left to user — all bets shown as WIN
+      }
+      return { ...r, ev, tier, suggestedStake, betType };
+    });
+    // ── Fetch FormFav enrichment (speed maps, class ratings, decorators) ──
+    if (config.ffKey) {
+      const raceDate = new Date(race.startTime || race.startTimeUTC || Date.now()).toISOString().split('T')[0];
+      const ffData = await fetchFormFavRace(fullRace.venueName || meeting.venueName || '', fullRace.number || race.number || 1, raceDate);
+      if (ffData) {
+        runners = applyFormFavData(runners, ffData);
+        fullRace.ffRaceClass = ffData.raceClass || '';
+        fullRace.ffCondition = ffData.condition || '';
+        // Re-score with FormFav data now applied
+        const ffConditions = { going: fullRace.trackCondition || 'Good', railPos: meeting.railPosition || '', raceDistance: fullRace.distance || race.distance || 1200, prizeMoney: fullRace.prizeMoney || race.prizeMoney || 0 };
+        runners = runners.map(function(r) { return Object.assign({}, r, { algoScore: scoreRunner(r, ffConditions) }); });
+        runners = runners.map(function(r) { return Object.assign({}, r, { tier: r.bfOdds ? getRecommendation(r, runners, fullRace, meeting) : null }); });
+        console.log('FormFav rescoring complete for', fullRace.venueName, 'R' + fullRace.number);
+      }
+    }
+
+    selectedRace = fullRace;
+    selectedMeeting = meeting;
+    selectedRunners = runners;
+    selectedMeetingData = meetingData;
+    lastOddsRefresh = new Date();
+    renderMain(fullRace, runners);
+    updateRefreshUI();
+    startOddsRefresh();
+
+    // Auto-log bet recommendations to tracker + send Discord alerts
+    runners.forEach(function(r) {
+      if (r.tier && r.tier !== 'SKIP' && r.bfOdds) {
+        logBetRecommendation(fullRace, r);
+        sendDiscordAlert(fullRace, r, false); // new recommendation
+      }
+    });
+
+    // Auto-log top scorer per race to Top Picks
+    const sortedByScore = runners.slice().sort(function(a,b) {
+      return (b.algoScore||0) - (a.algoScore||0);
+    });
+    if (sortedByScore.length > 0 && sortedByScore[0].bfOdds) {
+      addTopPick(fullRace, sortedByScore[0], runners);
+    }
+
+    // Update display with FormFav-enriched runners
+    renderMain(fullRace, selectedRunners);
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('mainPanel').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to Load Race</div><div class="empty-text">' + e.message + '</div></div>';
+  }
+}
+
+function renderMeetingRaces(meeting, races) {
+  const list = document.getElementById('raceList');
+  // Add race sub-items under the meeting
+  const existing = list.querySelectorAll('.race-sub-item');
+  existing.forEach(e => e.remove());
+  // Find the meeting item and insert after it
+  const meetingItems = list.querySelectorAll('.race-item');
+  let targetItem = null;
+  meetingItems.forEach(item => {
+    if (item.dataset.meetingId === String(meeting.meetingId)) targetItem = item;
+  });
+  races.forEach((r, idx) => {
+    const div = document.createElement('div');
+    div.className = 'race-item race-sub-item';
+    div.style.paddingLeft = '28px';
+    div.style.background = 'var(--surface)';
+    div.dataset.raceNum = r.raceNumber || idx + 1;
+    div.innerHTML = `
+      <span class="race-num" style="color:var(--gold)">R${r.raceNumber || idx+1}</span>
+      <div style="flex:1">
+        <div class="race-name" style="font-size:12px">${r.raceName || r.name || 'Race ' + (r.raceNumber || idx+1)}</div>
+        <div style="font-size:11px;color:var(--text3)">${r.raceDistance || r.distance || ''}m · ${r.raceClass || r.class || r.raceType || ''}</div>
+      </div>
+      <div class="race-time">${formatTime(r.raceTime || r.startTime || r.scheduledTime)}</div>
+    `;
+    div.addEventListener('click', () => selectMeetingRace(meeting, r));
+    if (targetItem) {
+      targetItem.after(div);
+      targetItem = div;
+    } else {
+      list.appendChild(div);
+    }
+  });
+}
+
+async function selectMeetingRace(meeting, race) {
+  showLoading(document.getElementById('mainPanel'));
+  try {
+    const raceNumber = race.raceNumber || race.number || 1;
+    const fieldData = await pfFetch('fields', { meetingId: meeting.meetingId, raceNumber: raceNumber });
+    const payload = fieldData.payLoad;
+    console.log('selectMeetingRace payload:', JSON.stringify(payload).substring(0, 400));
+    let runners = [];
+    // payLoad can be: { track, races:[{runners:[...]}] } or { runners:[...] }
+    if (payload && payload.races && payload.races[0]) {
+      runners = payload.races[0].runners || [];
+      Object.assign(race, payload.races[0]); // merge race details
+    } else if (payload && payload.runners) {
+      runners = payload.runners;
+    } else if (Array.isArray(payload)) {
+      runners = payload;
+    }
+    // Normalise runner fields
+    runners = runners.map((r, i) => ({
+      ...r,
+      runnerNumber: r.tabNo || r.runnerNumber || (i + 1),
+      runnerName: r.name || r.runnerName || 'Unknown',
+      barrierNumber: r.barrier || r.barrierNumber || (i + 1),
+      jockeyName: (r.jockey && r.jockey.fullName) ? r.jockey.fullName.trim() : 'Unknown',
+      trainerName: (r.trainer && r.trainer.fullName) ? r.trainer.fullName.trim() : 'Unknown',
+      jockeyWinPercent: (r.jockey && r.jockey.winPercent) || 0,
+      trainerWinPercent: (r.trainer && r.trainer.winPercent) || 0,
+    }));
+
+    const raceConditions = {
+      prizeMoney: race.prizeMoney || race.totalPrizeMoney || 0,
+      trackCondition: meeting.expectedCondition || meeting.trackCondition || 'Good',
+      raceDistance: race.distance || race.raceDistance || 1200,
+      numberOfRunners: runners.length,
+      railPosition: meeting.railPosition,
+      isWaRace: isWaRaceVenue(meeting.venueName || meeting.trackName || ''),
+      venueName: meeting.venueName || meeting.trackName || '',
+      trackSurface: meeting.trackSurface || ''
+    };
+    const fullRace = {
+      ...race,
+      venueName: meeting.venueName,
+      meetingId: meeting.meetingId,
+      trackCondition: raceConditions.trackCondition,
+      railPosition: meeting.railPosition,
+      marketId: null
+    };
+
+    if (runners.length === 0) runners = generatePlaceholderRunners(fullRace);
+
+    runners = runners.map(r => ({ ...r, algoScore: scoreRunner(r, raceConditions) }));
+    runners = scoresToProbabilities(runners);
+    runners = runners.map(r => {
+      const ev = r.bfOdds ? calcExpectedValue(r.impliedProb, r.bfOdds) : null;
+      const tier = r.bfOdds ? getRecommendation(r, runners, fullRace, meeting) : null;
+      return Object.assign({}, r, { ev: ev, tier: tier, suggestedStake: 0, betType: 'WIN' });
+    });
+    renderMain(fullRace, runners);
+  } catch(e) {
+    console.error(e);
+    document.getElementById('mainPanel').innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to Load Race</div><div class="empty-text">' + e.message + '</div></div>';
+  }
+}
+
+function renderSidebar(meetings) {
+  const list = document.getElementById('raceList');
+  if (!meetings || meetings.length === 0) {
+    list.innerHTML = '<div class="no-races">No WA metro races found today</div>';
+    return;
+  }
+  list.innerHTML = '';
+  meetings.forEach((race, idx) => {
+    const hasBet = bestBets.some(b => b.raceId === race.id);
+    const div = document.createElement('div');
+    div.className = 'race-item' + (hasBet ? ' has-bet' : '') + (selectedRace && selectedRace.id === race.id ? ' active' : '');
+    div.dataset.meetingId = race.meetingId || '';
+    div.innerHTML = `
+      <span class="race-num">${race.state || '??'}</span>
+      <div style="flex:1">
+        <div class="race-name">${race.venueName || race.trackName || 'Unknown'}</div>
+        <div style="font-size:11px;color:var(--text3)">${race.railPosition ? 'Rail: ' + race.railPosition : ''}</div>
+      </div>
+      <div>
+        ${hasBet ? '<div class="bet-badge">BET</div>' : ''}
+      </div>
+    `;
+    div.addEventListener('click', () => {
+      // Toggle races for this meeting — don't auto-load runners
+      const existingSubs = list.querySelectorAll('.race-sub-item[data-parent-id="' + (race.meetingId || '') + '"]');
+      if (existingSubs.length > 0) {
+        // Already expanded — collapse
+        existingSubs.forEach(e => e.remove());
+        div.classList.remove('active');
+      } else {
+        // Collapse any other expanded meeting first
+        list.querySelectorAll('.race-sub-item').forEach(e => e.remove());
+        list.querySelectorAll('.race-item').forEach(e => e.classList.remove('active'));
+        stopOddsRefresh();
+        div.classList.add('active');
+        // Expand this meeting's races
+        expandMeeting(race, div);
+      }
+    });
+    list.appendChild(div);
+  });
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return '—';
+  try {
+    const d = new Date(timeStr);
+    return d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', timeZone: 'Australia/Sydney' });
+  } catch { return timeStr; }
+}
+
+function renderMain(race, runners) {
+  const main = document.getElementById('mainPanel');
+  const going = race.trackCondition || race.going || 'Good';
+  const synthetic = isSyntheticTrack(race.venueName || '', race.trackSurface || '');
+  const goingClass = synthetic ? 'going-synthetic'
+    : going.toLowerCase().includes('good') ? 'going-good'
+    : going.toLowerCase().includes('soft') ? 'going-soft'
+    : going.toLowerCase().includes('heavy') ? 'going-heavy' : 'going-firm';
+  const goingLabel = synthetic ? '🏟️ SYNTHETIC' : going;
+
+  const runnersWithProbs = scoresToProbabilities(runners);
+  const sortedRunners = [...runnersWithProbs].sort((a, b) => (b.algoScore || 0) - (a.algoScore || 0));
+  const topRunner = sortedRunners[0];
+
+  let bestBetsHTML = '';
+  const raceBets = runnersWithProbs.filter(r => r.tier && r.tier !== 'SKIP');
+  if (raceBets.length > 0) {
+    bestBetsHTML = `
+    <div class="best-bets">
+      <h2>Bet Recommendations</h2>
+      ${raceBets.sort((a,b) => {
+        const order = {A:0,B:1,C:2};
+        return (order[a.tier]||3) - (order[b.tier]||3);
+      }).map(r => `
+        <div class="bet-card tier-${r.tier.toLowerCase()}-card">
+          <div class="bet-card-left">
+            <div class="bet-card-race">R${race.raceNumber} · ${race.venueName || race.trackName} · ${formatTime(race.raceTime)}</div>
+            <div class="bet-card-name">${r.runnerName || r.name}</div>
+            <div class="bet-card-detail">Barrier ${r.barrierNumber || r.barrier || '?'} · ${r.jockeyName || r.jockey || 'Unknown'} · Score ${(r.algoScore||0).toFixed(1)}</div>
+          </div>
+          <div class="bet-card-right">
+            <div class="bet-card-odds">${r.bfOdds ? r.bfOdds.toFixed(2) : '—'}</div>
+            <div class="bet-card-stake">${r.suggestedStake ? '$' + r.suggestedStake.toFixed(2) + ' ' + r.betType : 'Calc odds first'}</div>
+            <div class="bet-card-value">${r.ev != null ? (r.ev > 0 ? '+' : '') + (r.ev * 100).toFixed(1) + '% EV' : ''}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  main.innerHTML = `
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">${race.raceName || 'Race ' + race.raceNumber}</div>
+        <div class="panel-subtitle">${race.venueName || race.trackName} · R${race.raceNumber} · ${formatTime(race.raceTime)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span id="raceOddsAge" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace"></span>
+        <button class="refresh-btn" onclick="manualRefreshOdds()" title="Refresh odds now">↻ Refresh Odds</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Distance</div>
+        <div class="stat-value gold">${race.raceDistance || '—'}m</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Track</div>
+        <div class="stat-value"><span class="going-badge ${goingClass}">${goingLabel}</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Runners</div>
+        <div class="stat-value">${runners.length}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Prize Money</div>
+        <div class="stat-value gold">${race.prizeMoney ? '$' + Number(race.prizeMoney).toLocaleString() : '—'}</div>
+      </div>
+    </div>
+
+    ${bestBetsHTML}
+
+    <div class="race-detail">
+      <div class="race-detail-header">
+        <div class="track-name">Runner Ratings</div>
+        <div class="race-meta">
+          <div class="meta-item">Rail: <strong>${race.railPosition || 'True'}</strong></div>
+          <div class="meta-item">Class: <strong>${race.raceClass || race.class || '—'}</strong></div>
+        </div>
+      </div>
+      <table class="runners-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Barrier</th>
+            <th>Runner</th>
+            <th>Algo Score</th>
+            <th>Win Prob</th>
+             <th>BF Odds</th>
+             <th title="FormFav: pace/class/badges">FF</th>
+             <th>Edge</th>
+            <th>Rec</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sortedRunners.map((r, i) => {
+            const isTop = i === 0;
+            const scoreClass = (r.algoScore||0) >= 55 ? 'high' : (r.algoScore||0) >= 40 ? 'med' : 'low';
+            const fillWidth = Math.min(100, ((r.algoScore||0) / 80) * 100);
+            const probPct = ((r.impliedProb || 0) * 100).toFixed(1);
+            const evDisplay = r.ev != null
+              ? `<span class="value-badge ${r.ev > 0.05 ? 'value-pos' : r.ev > 0 ? 'value-neutral' : 'value-neg'}">${r.ev > 0 ? '+' : ''}${(r.ev*100).toFixed(1)}%</span>`
+              : '<span class="value-badge value-neutral">—</span>';
+            const tierHTML = r.tier && r.tier !== 'SKIP'
+              ? `<div class="bet-rec"><span class="tier-badge tier-${r.tier.toLowerCase()}">${r.tier}</span><span class="bet-type-label">${r.betType || 'WIN'}</span></div>`
+              : '<span class="tier-badge tier-skip">SKIP</span>';
+            return `
+              <tr class="${isTop ? 'top-pick' : ''}">
+                <td class="runner-num">${r.runnerNumber || r.number || i+1}</td>
+                <td><span class="barrier-badge">${r.barrierNumber || r.barrier || '?'}</span></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <div class="runner-name">${r.runnerName || r.name || 'Unknown'}</div>
+                    <button class="pin-btn ${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? 'pinned' : ''; })()}"
+                      data-pin-key="${(race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i)}"
+                      title="${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? 'Unpin from bet list' : 'Pin to bet list'; })()}"
+                      onclick="toggleManualPin(
+                        '${r.runnerId||r.runnerNumber||i}',
+                        '${(r.runnerName||r.name||'Unknown').replace(/'/g,"\\'")}',
+                        '${(race.name||'').replace(/'/g,"\\'")}',
+                        '${(race.venueName||'').replace(/'/g,"\\'")}',
+                        '${race.number||race.raceNumber||''}',
+                        ${(r.algoScore||0).toFixed(1)},
+                        ${(r.scoreGap||0).toFixed(1)}
+                      )">${(() => { const k = (race.venueName||'') + '_R' + (race.number||race.raceNumber||'') + '_' + (r.runnerId||r.runnerNumber||i); return manualPins.some(p=>p.key===k) ? '📌' : '📍'; })()}</button>
+                  </div>
+                  <div class="runner-jockey">${r.jockeyName || r.jockey || ''} · ${r.trainerName || r.trainer || ''}</div>
+                   <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--gold);margin-top:2px;letter-spacing:1px">${r.last10str || ''}</div>
+                   <div style="font-size:10px;color:var(--text3);margin-top:1px">${r.careerStarts ? r.careerWins+'W '+r.careerSeconds+'S '+r.careerThirds+'T / '+r.careerStarts+' starts' : ''}${r.weight ? ' &middot; '+r.weight+'kg' : ''}</div>
+                </td>
+                <td>
+                  <div class="score-bar-wrap">
+                    <div class="score-bar"><div class="score-bar-fill ${scoreClass}" style="width:${fillWidth}%"></div></div>
+                    <span class="score-num">${(r.algoScore||0).toFixed(1)}</span>
+                  </div>
+                </td>
+                <td class="prob-val">${probPct}%</td>
+                 <td class="odds-val">${r.bfOdds ? r.bfOdds.toFixed(2) : '—'}<div style="font-size:9px;color:var(--text3)">${r.oddsSource === 'LB' ? 'LB' : r.oddsSource === 'SP' ? 'SP' : r.bfOdds ? 'BF' : ''}</div></td>
+                 <td style="font-size:11px;text-align:center;white-space:nowrap">
+                   ${r.ffRunningStyle === 'P' ? '<span title="On-pace" style="color:var(--green)">⚡</span>' : r.ffRunningStyle === 'M' ? '<span title="Midfield" style="color:var(--text2)">〰</span>' : r.ffRunningStyle === 'B' ? '<span title="Back marker" style="color:var(--text3)">🐢</span>' : ''}${r.ffLastStartWinner ? '<span title="Last start winner" style="color:var(--gold)">★</span>' : ''}${r.ffGearChange ? '<span title="Gear change" style="color:orange">⚙</span>' : ''}${r.ffJockeyTrainerCombo ? '<span title="Strong combo" style="color:var(--green)">🤝</span>' : ''}${r.ffClassFit === 'out_of_depth' ? '<span title="Out of depth" style="color:var(--red)">⬆</span>' : r.ffWithinOptimal ? '<span title="Optimal class" style="color:var(--green)">✓</span>' : ''}
+                 </td>
+                 <td>${evDisplay}</td>
+                 <td>${tierHTML}</td>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── LOAD RACES ─────────────────────────────────────────────
+async function loadTodaysRaces() {
+  if (!config.pfKey) {
+    document.getElementById('settingsModal').classList.remove('hidden');
+    showToast('Please enter your API keys first', 'error');
+    return;
+  }
+
+  showLoading(document.getElementById('mainPanel'));
+  setStatus(false, 'LOADING...');
+
+  const picker = document.getElementById('raceDatePicker');
+  const today = picker.value || new Date().toISOString().split('T')[0];
+  const displayDate = new Date(today + 'T12:00:00');
+  document.getElementById('dateDisplay').textContent = displayDate.toLocaleDateString('en-AU', {
+    weekday: 'short', day: 'numeric', month: 'short'
+  });
+
+  try {
+    // Login to Betfair
+    const bfOk = await bfLogin();
+    if (bfOk) {
+      setStatus(true, 'LIVE — BETFAIR CONNECTED');
+    } else {
+      setStatus(false, 'PUNTING FORM ONLY');
+    }
+
+    // Cache Ladbrokes markets for the day
+    if (config.lbFrom) {
+      await cacheLbMarkets();
+    }
+
+    // Fetch Odds API events for the day (cached, used per race)
+    if (config.oddsApiKey) {
+      setStatus(false, 'LOADING ODDS...');
+      oddsApiEvents = await fetchOddsAPIMarkets();
+      if (oddsApiEvents && oddsApiEvents.length > 0) {
+        showToast('Odds API loaded — ' + oddsApiEvents.length + ' events', 'success');
+        setStatus(true, 'LIVE — ODDS API + BETFAIR');
+      } else {
+        showToast('Odds API — no events found', '');
+      }
+      if (bfOk) setStatus(true, 'LIVE — BETFAIR + ODDS API');
+    }
+
+    // Fetch meetings
+    const meetingsData = await fetchPFMeetings(today);
+    const meetings = meetingsData.payLoad || meetingsData.meetings || meetingsData || [];
+
+    // Parse meetings using correct PF API structure
+    // track.name = venue, track.state = state, races fetched separately via meetingId
+    console.log('Total meetings:', meetings.length);
+    allRaces = [];
+    allMeetings = [];
+    meetings.forEach(m => {
+      const venue = (m.track && m.track.name) ? m.track.name : (m.venueName || m.trackName || 'Unknown');
+      const state = (m.track && m.track.state) ? m.track.state : (m.state || detectState(venue));
+      const trackSurface = (m.track && m.track.surface) ? m.track.surface : '';
+      const mid = m.meetingId || m.id || '';
+      const meetingObj = {
+        ...m,
+        venueName: venue,
+        state: state,
+        meetingId: mid,
+        trackSurface: trackSurface,
+        railPosition: m.railPosition || 'True',
+        trackCondition: m.expectedCondition || 'Good',
+        raceTime: m.meetingDate
+      };
+      allMeetings.push(meetingObj);
+      // Races are null at this level — each meeting is a clickable item
+      // Individual races are loaded when user clicks a meeting
+      allRaces.push(meetingObj);
+    });
+
+    // Apply any active filters
+    const displayRaces = getFilteredRaces();
+    renderSidebar(displayRaces);
+
+    if (allRaces.length > 0) {
+      selectRace((displayRaces.length > 0 ? displayRaces : allRaces)[0]);
+      const metroCount = allRaces.filter(function(r) { return isMetroTrack(r.venueName); }).length;
+      showToast('Loaded ' + allRaces.length + ' races (' + metroCount + ' metro) across ' + allMeetings.length + ' meetings', 'success');
+    } else {
+      document.getElementById('mainPanel').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">No Races Found</div>
+          <div class="empty-text">No meetings found for today at WA metro tracks.<br>Check your Punting Form API key or try again later.</div>
+        </div>`;
+    }
+  } catch (err) {
+    console.error(err);
+    setStatus(false, 'ERROR');
+    showToast('Error loading races: ' + err.message, 'error');
+    document.getElementById('mainPanel').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-title">Connection Error</div>
+        <div class="empty-text">${err.message}<br><br>Make sure your proxy is running:<br><strong>node proxy.js</strong></div>
+      </div>`;
+  }
+}
+
+async function selectRace(race) {
+  selectedRace = race;
+  // Update sidebar active state
+  document.querySelectorAll('.race-item').forEach((el, i) => {
+    el.classList.toggle('active', allRaces[i] && allRaces[i].id === race.id || allRaces[i] === race);
+  });
+
+  showLoading(document.getElementById('mainPanel'));
+
+  try {
+    // Fetch full meeting fields (all races) using meetingId only
+    let meetingData = null;
+    if (race.meetingId) {
+      const fieldData = await pfFetch('fields', { meetingId: race.meetingId });
+      meetingData = fieldData.payLoad;
+      console.log('Meeting fields payload keys:', meetingData ? Object.keys(meetingData) : 'null');
+      console.log('Payload sample:', JSON.stringify(meetingData).substring(0, 500));
+    }
+
+    // PF fields: payLoad = { track, races: [...] }
+    let meetingRaces = [];
+    if (meetingData) {
+      if (meetingData.races && Array.isArray(meetingData.races)) {
+        meetingRaces = meetingData.races;
+      } else if (Array.isArray(meetingData)) {
+        meetingRaces = meetingData;
+      }
+    }
+
+    console.log('Races found:', meetingRaces.length);
+    console.log('Race objects sample:', JSON.stringify(meetingRaces.slice(0,3).map(r => ({
+      raceNumber: r.raceNumber,
+      raceNo: r.raceNo,
+      number: r.number,
+      raceName: r.raceName,
+      name: r.name,
+      raceDistance: r.raceDistance,
+      distance: r.distance,
+      raceTime: r.raceTime,
+      startTime: r.startTime,
+      scheduledTime: r.scheduledTime,
+      keys: Object.keys(r)
+    }))));
+
+    // Show races in sidebar
+    if (meetingRaces.length > 0) {
+      renderMeetingRaces(race, meetingRaces);
+    }
+
+    // Load first race runners — PF structure: race.runners[]
+    const firstRace = meetingRaces.length > 0 ? meetingRaces[0] : null;
+    const firstRaceConditions = firstRace ? {
+      prizeMoney: firstRace.prizeMoney || 0,
+      trackCondition: firstRace.trackCondition || meetingData.trackCondition || 'Good',
+      raceDistance: firstRace.raceDistance || firstRace.distance || 1200,
+      numberOfRunners: (firstRace.runners || []).length,
+      railPosition: race.railPosition
+    } : {};
+    let runners = firstRace ? (firstRace.runners || []) : [];
+
+    if (!runners || runners.length === 0) {
+      runners = generatePlaceholderRunners(race);
+    }
+
+    // Normalise PF runner fields to internal format
+    runners = runners.map((r, i) => ({
+      ...r,
+      runnerNumber: r.tabNo || r.runnerNumber || (i + 1),
+      runnerName: r.name || r.runnerName || 'Unknown',
+      barrierNumber: r.barrier || r.barrierNumber || (i + 1),
+      jockeyName: (r.jockey && r.jockey.fullName) ? r.jockey.fullName.trim() : 'Unknown',
+      trainerName: (r.trainer && r.trainer.fullName) ? r.trainer.fullName.trim() : 'Unknown',
+      jockeyWinPercent: (r.jockey && r.jockey.winPercent) || 0,
+      trainerWinPercent: (r.trainer && r.trainer.winPercent) || 0,
+    }));
+
+    // Score each runner
+    const raceConditions = firstRaceConditions.raceDistance ? firstRaceConditions : {
+      prizeMoney: firstRace ? (firstRace.prizeMoney || 0) : 0,
+      trackCondition: (firstRace && firstRace.trackCondition) || (meetingData && meetingData.trackCondition) || 'Good',
+      raceDistance: firstRace ? (firstRace.raceDistance || firstRace.distance || 1200) : 1200,
+      numberOfRunners: runners.length,
+      railPosition: race.railPosition
+    };
+
+    // fullRace and meeting needed by getRecommendation / renderMain
+    const meeting = selectedMeeting || race;
+    const fullRace = Object.assign({}, race, {
+      venueName: (meeting && (meeting.venueName || meeting.trackName)) || race.venueName || '',
+      trackSurface: (meeting && meeting.trackSurface) || '',
+      trackCondition: raceConditions.trackCondition,
+    });
+
+    runners = runners.map(r => ({
+      ...r,
+      algoScore: scoreRunner(r, raceConditions)
+    }));
+
+    // Betfair odds are fetched in loadRaceRunners — nothing to do here
+
+    // Calculate probs, EV, tiers, stakes
+    runners = scoresToProbabilities(runners);
+    runners = runners.map(r => {
+      const ev = r.bfOdds ? calcExpectedValue(r.impliedProb, r.bfOdds) : null;
+      const tier = r.bfOdds ? getRecommendation(r, runners, fullRace, meeting) : null;
+      let suggestedStake = 0;
+      let betType = 'WIN';
+      if (tier && tier !== 'SKIP' && r.bfOdds && config.bankSize) {
+        if (config.stakingMethod === 'kelly') {
+          suggestedStake = calcKellyStake(ev, r.impliedProb, r.bfOdds, config.bankSize, config.maxStakePct);
+        } else if (config.stakingMethod === 'flat') {
+          suggestedStake = config.bankSize * 0.02;
+        } else {
+          suggestedStake = (config.bankSize * (config.maxStakePct / 100));
+        }
+        // Each-way if odds > 5 and tier B/C
+        // Each-way if odds >= $7 and B tier only
+        if (r.bfOdds >= 7 && tier !== 'A') {
+          suggestedStake = suggestedStake / 2;
+        }
+      }
+
+      // Update global best bets
+      if (tier && tier !== 'SKIP') {
+        const existing = bestBets.findIndex(b => b.raceId === (race.id || race.raceNumber) && b.runnerId === (r.runnerId || r.runnerNumber));
+        const betEntry = { ...r, tier, ev, suggestedStake, betType, raceId: race.id || race.raceNumber, raceName: race.raceName, raceTime: race.raceTime };
+        if (existing >= 0) bestBets[existing] = betEntry;
+        else bestBets.push(betEntry);
+      }
+
+      return { ...r, ev, tier, suggestedStake, betType };
+    });
+
+    renderMain(race, runners);
+    renderSidebar(allRaces); // refresh sidebar bet badges
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('mainPanel').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <div class="empty-title">Failed to Load Race</div>
+        <div class="empty-text">${err.message}</div>
+      </div>`;
+  }
+}
+
+function generatePlaceholderRunners(race) {
+  // Generate placeholder runners if API doesn't return them
+  const names = ['ASCOT FLYER','BELMONT STAR','PERTH PRIDE','SWAN RIVER','KINGS PARK','COTTESLOE KING','FREMANTLE STORM','MARGARET RIVER'];
+  return names.slice(0, 8).map((name, i) => ({
+    runnerNumber: i + 1,
+    runnerName: name,
+    barrierNumber: i + 1,
+    jockeyName: 'Jockey ' + (i + 1),
+    trainerName: 'Trainer ' + String.fromCharCode(65 + i),
+    last5Starts: [Math.ceil(Math.random()*3+1), Math.ceil(Math.random()*4+1), Math.ceil(Math.random()*5+1), Math.ceil(Math.random()*6+1), Math.ceil(Math.random()*6+1)],
+    jockeyWinPercent: 10 + Math.random() * 20,
+    trainerWinPercent: 10 + Math.random() * 20,
+  }));
+}
+
+// ─── ODDS AUTO-REFRESH ──────────────────────────────────────
+const ODDS_REFRESH_INTERVAL = 60; // seconds
+
+function startOddsRefresh() {
+  if (oddsRefreshTimer) clearInterval(oddsRefreshTimer);
+  if (!bfSessionToken || !selectedRace) return;
+  oddsRefreshTimer = setInterval(function() {
+    refreshOddsOnly();
+  }, ODDS_REFRESH_INTERVAL * 1000);
+}
+
+function stopOddsRefresh() {
+  if (oddsRefreshTimer) { clearInterval(oddsRefreshTimer); oddsRefreshTimer = null; }
+}
+
+function updateRefreshUI() {
+  const label = document.getElementById('oddsRefreshLabel');
+  const lastEl = document.getElementById('lastRefreshTime');
+  const ageEl = document.getElementById('raceOddsAge');
+  if (!lastOddsRefresh) return;
+  if (label) label.style.display = 'inline';
+  const secAgo = Math.round((new Date() - lastOddsRefresh) / 1000);
+  const timeStr = lastOddsRefresh.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (lastEl) lastEl.textContent = timeStr;
+  if (ageEl) ageEl.textContent = secAgo < 5 ? 'odds live' : secAgo + 's ago';
+  // Update countdown
+  const nextEl = document.getElementById('nextRefreshIn');
+  if (nextEl && oddsRefreshTimer) {
+    const nextIn = ODDS_REFRESH_INTERVAL - secAgo;
+    nextEl.textContent = 'next refresh ' + Math.max(0, nextIn) + 's';
+  }
+}
+
+// Lightweight odds-only refresh — no re-fetching form or fields
+async function refreshOddsOnly() {
+  if (!selectedRace || !selectedMeeting || !bfSessionToken) return;
+  if (!selectedRace.startTime) return;
+
+  const pfTime = new Date(selectedRace.startTime);
+  // Don't refresh if race started more than 10 mins ago
+  if (new Date() - pfTime > 10 * 60 * 1000) {
+    stopOddsRefresh();
+    const ageEl = document.getElementById('raceOddsAge');
+    if (ageEl) ageEl.textContent = 'race finished';
+    return;
+  }
+
+  try {
+    const markets = await fetchBFMarketsForRace(selectedMeeting.venueName, pfTime.toISOString());
+    if (markets.length === 0) return;
+
+    const market = markets[0];
+    const book = await fetchBFOdds(market.marketId);
+    if (!book || !book.runners) return;
+
+    // Apply fresh Ladbrokes odds during refresh
+    if (config.lbFrom && selectedMeeting) {
+      selectedRunners = await applyLbOdds(selectedRunners, selectedMeeting.venueName || '', selectedRace.number || selectedRace.raceNumber || 1);
+    }
+
+    // Update odds on selectedRunners
+    let oddsChanged = false;
+    selectedRunners = selectedRunners.map(function(r) {
+      const pfName = (r.runnerName || '').toLowerCase().replace(/[^a-z]/g, '');
+      const bfRunner = market.runners && market.runners.find(function(br) {
+        const bfName = (br.runnerName || '').toLowerCase().replace(/[^a-z]/g, '');
+        return pfName.substring(0,6) === bfName.substring(0,6) || pfName === bfName;
+      });
+      if (bfRunner) {
+        const bookRunner = book.runners.find(function(br) { return br.selectionId === bfRunner.selectionId; });
+        if (bookRunner && bookRunner.ex && bookRunner.ex.availableToBack && bookRunner.ex.availableToBack[0]) {
+          const newOdds = bookRunner.ex.availableToBack[0].price;
+          if (newOdds !== r.bfOdds) {
+            oddsChanged = true;
+            console.log('Odds update:', r.runnerName, r.bfOdds, '->', newOdds);
+          }
+          return Object.assign({}, r, { bfOdds: newOdds, selectionId: bfRunner.selectionId });
+        }
+      }
+      return r;
+    });
+
+    if (oddsChanged || true) {
+      // Recalculate EV and tiers with new odds
+      const raceConditions = {
+        prizeMoney: selectedRace.prizeMoney || 0,
+        trackCondition: selectedRace.trackCondition || 'Good',
+        raceDistance: selectedRace.distance || selectedRace.raceDistance || 1200,
+        numberOfRunners: selectedRunners.length,
+        railPosition: selectedMeeting.railPosition || 'True',
+        railPosition: selectedMeeting.railPosition || 'True',
+        isWaRace: isWaRaceVenue(selectedMeeting.venueName || selectedMeeting.trackName || ''),
+        avgWeight: selectedRunners.reduce(function(s,r){return s+(r.weight||57);},0) / Math.max(1,selectedRunners.length),
+        venueName: selectedMeeting.venueName || selectedMeeting.trackName || '',
+        trackSurface: selectedMeeting.trackSurface || ''
+      };
+      selectedRunners = scoresToProbabilities(selectedRunners);
+      selectedRunners = selectedRunners.map(function(r) {
+        const ev = r.bfOdds ? calcExpectedValue(r.impliedProb, r.bfOdds) : null;
+        const tier = r.bfOdds ? getRecommendation(r, selectedRunners, selectedRace, selectedMeeting) : null;
+        let suggestedStake = 0, betType = 'WIN';
+        const bank = config.bankSize || 500;
+        const maxPct = config.maxStakePct || 5;
+        if (tier && tier !== 'SKIP' && r.bfOdds) {
+          if (config.stakingMethod === 'kelly') {
+            suggestedStake = calcKellyStake(ev || 0, r.impliedProb, r.bfOdds, bank, maxPct);
+          } else if (config.stakingMethod === 'flat') {
+            suggestedStake = bank * 0.02;
+          } else {
+            suggestedStake = bank * (maxPct / 100);
+          }
+          // Minimum $2, maximum bank * maxPct%
+          suggestedStake = Math.max(2, Math.min(suggestedStake, bank * maxPct / 100));
+          suggestedStake = Math.round(suggestedStake * 100) / 100;
+          // E/W decision left to user — all recommendations shown as WIN
+          // betType stays WIN
+        }
+        return Object.assign({}, r, { ev: ev, tier: tier, suggestedStake: suggestedStake, betType: betType });
+      });
+
+      lastOddsRefresh = new Date();
+      renderMain(selectedRace, selectedRunners);
+      updateRefreshUI();
+
+      // Log any new recommendations + Discord alert for genuinely new ones only
+      selectedRunners.forEach(function(r) {
+        if (r.tier && r.tier !== 'SKIP' && r.bfOdds) {
+          const wasNew = logBetRecommendation(selectedRace, r);
+          if (wasNew === true) {
+            sendDiscordAlert(selectedRace, r, false);
+          }
+        }
+      });
+
+      if (oddsChanged) showToast('Odds updated', '');
+    }
+  } catch(e) {
+    console.warn('Odds refresh failed:', e.message);
+  }
+}
+
+async function manualRefreshOdds() {
+  const ageEl = document.getElementById('raceOddsAge');
+  if (ageEl) ageEl.textContent = 'refreshing...';
+  await refreshOddsOnly();
+  if (!lastOddsRefresh) showToast('No market found for this race', '');
+}
+
+// ─── SETTINGS ───────────────────────────────────────────────
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  populateSettingsForm();
+  document.getElementById('settingsModal').classList.remove('hidden');
+});
+document.getElementById('cancelSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('hidden');
+});
+document.getElementById('saveSettings').addEventListener('click', () => {
+  saveConfig();
+  document.getElementById('settingsModal').classList.add('hidden');
+  showToast('Settings saved', 'success');
+});
+document.getElementById('loadRacesBtn').addEventListener('click', function() {
+  saturdayBetPool = []; // reset pool on new load
+  loadTodaysRaces();
+});
+document.getElementById('satTop10Btn').addEventListener('click', function() {
+  renderSatTop10();
+  document.getElementById('satTop10Overlay').classList.remove('hidden');
+});
+document.getElementById('closeSatTop10').addEventListener('click', function() {
+  document.getElementById('satTop10Overlay').classList.add('hidden');
+});
+
+// ─── DEBUG ──────────────────────────────────────────────────
+async function debugAPI() {
+  if (!config.pfKey) { showToast('Enter your API key in Settings first', 'error'); return; }
+  const picker = document.getElementById('raceDatePicker');
+  const date = picker.value || new Date().toISOString().split('-').join('-');
+  const url = PF_BASE + '/meetingslist?meetingDate=' + date + '&apiKey=' + config.pfKey;
+  const displayUrl = PF_BASE + '/meetingslist?meetingDate=' + date + '&apiKey=***';
+  const main = document.getElementById('mainPanel');
+  main.innerHTML = '<div class="loading"><div class="spinner"></div>Calling API...</div>';
+  try {
+    const res = await fetch(PROXY + encodeURIComponent(url));
+    const text = await res.text();
+    let parsed; try { parsed = JSON.parse(text); } catch(e) { parsed = null; }
+    main.innerHTML = '<div style="padding:24px">' +
+      '<p style="font-family:monospace;font-size:12px;margin-bottom:12px;color:var(--text2)">HTTP ' + res.status + '</p>' +
+      '<p style="font-family:monospace;font-size:11px;margin-bottom:16px;color:var(--text3);word-break:break-all">' + (typeof displayUrl !== 'undefined' ? displayUrl : url.replace(config.pfKey, '***')) + '</p>' +
+      '<pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;overflow:auto;max-height:65vh;color:var(--text);white-space:pre-wrap;word-break:break-all">' +
+      (parsed ? JSON.stringify(parsed, null, 2) : text).substring(0, 8000) + '</pre></div>';
+  } catch(e) {
+    main.innerHTML = '<div style="padding:24px;color:var(--red)">' + e.message + '</div>';
+  }
+}
+
+// State filter
+function getFilteredRaces() {
+  const state = document.getElementById('stateFilter').value;
+  const metroOnly = document.getElementById('metroOnly').checked;
+  let filtered = state === 'ALL' ? allRaces : allRaces.filter(function(r) { return r.state === state; });
+  if (metroOnly) filtered = filtered.filter(function(r) { return isMetroTrack(r.venueName); });
+  return filtered;
+}
+
+document.getElementById('stateFilter').addEventListener('change', function() {
+  const filtered = getFilteredRaces();
+  renderSidebar(filtered);
+  if (filtered.length > 0) selectRace(filtered[0]);
+});
+
+document.getElementById('metroOnly').addEventListener('change', function() {
+  const filtered = getFilteredRaces();
+  renderSidebar(filtered);
+  if (filtered.length > 0) selectRace(filtered[0]);
+});
+
+// ─── TOP PICKS SYSTEM ───────────────────────────────────────
+const TOP_PICKS_KEY = 'waRacingTopPicks';
+const MAX_TOP_PICKS = 200; // Track all races — no limit
+
+function loadTopPicks() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TOP_PICKS_KEY) || '{}');
+    const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+    // Reset daily
+    if (saved.date !== today) return { date: today, picks: [] };
+    return saved;
+  } catch(e) { return { date: new Date().toLocaleDateString('en-AU'), picks: [] }; }
+}
+
+function saveTopPicks(data) {
+  localStorage.setItem(TOP_PICKS_KEY, JSON.stringify(data));
+}
+
+function addTopPick(race, runner, allRunners) {
+  const data = loadTopPicks();
+  const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+  data.date = today;
+
+  // Score gap = difference between this horse's score and 2nd best in field
+  const sortedScores = allRunners
+    .map(function(r) { return r.algoScore || 0; })
+    .sort(function(a, b) { return b - a; });
+  const myScore = runner.algoScore || 0;
+  const myRank = sortedScores.indexOf(myScore) + 1;
+  if (myRank !== 1) return; // only track the top scorer per race
+
+  const secondScore = sortedScores[1] || 0;
+  const scoreGap = Math.round((myScore - secondScore) * 10) / 10;
+
+  // Log top picks for ALL tracks — no metro restriction
+  // Cap at $6 — keeps top picks aligned with recommended bets range
+  if (runner.bfOdds && runner.bfOdds > 6) return;
+
+  // Check if already logged for this race (use date + track + raceNum as key)
+  const pickDate = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+  const existingIdx = data.picks.findIndex(function(p) {
+    return p.track === (race.venueName || '') &&
+           p.raceNum === String(race.number || race.raceNumber || '?') &&
+           p.date === pickDate;
+  });
+
+  const pick = {
+    id: (race.raceId || race.name || '') + '_' + (runner.runnerId || runner.runnerName) + '_' + pickDate,
+    date: today,
+    track: race.venueName || race.trackName || 'Unknown',
+    state: (selectedMeeting && selectedMeeting.state) || '',
+    isMetro: isMetroTrack(race.venueName || ''),
+    raceNum: String(race.number || race.raceNumber || '?'),
+    raceName: race.name || race.raceName || '',
+    raceId: race.raceId || race.name || '',
+    horseNum: String(runner.tabNo || runner.runnerNumber || ''),
+    horse: runner.runnerName || runner.name || 'Unknown',
+    distance: (selectedRace && selectedRace.distance) || (selectedRace && selectedRace.raceDistance) || 0,
+    runnerId: runner.runnerId || runner.runnerName,
+    algoScore: myScore,
+    scoreGap: scoreGap,
+    winPct: runner.winPct || 0,
+    placePct: runner.placePct || 0,
+    last10: runner.last10str || '',
+    bfOdds: runner.bfOdds || 0,
+    oddsSource: runner.oddsSource || 'BF',
+    result: null,
+    pnl: null
+  };
+
+  if (existingIdx >= 0) {
+    // Update odds if already exists
+    data.picks[existingIdx] = Object.assign({}, data.picks[existingIdx], { bfOdds: pick.bfOdds });
+  } else {
+    data.picks.push(pick);
+  }
+
+  // Sort by time (most recent first), keep all
+  data.picks.sort(function(a, b) {
+    // Sort by date desc then raceNum asc
+    if (a.date !== b.date) return b.date.localeCompare(a.date);
+    return Number(a.raceNum) - Number(b.raceNum);
+  });
+
+  saveTopPicks(data);
+}
+
+function setPickResult(pickId, result) {
+  const data = loadTopPicks();
+  const pick = data.picks.find(function(p) { return p.id === pickId; });
+  if (!pick) return;
+  pick.result = result;
+  if (result === 'W') pick.pnl = (pick.bfOdds - 1);       // 1 unit stake
+  else if (result === 'P') pick.pnl = -1;                  // WIN bet only — place = loss
+  else if (result === 'L') pick.pnl = -1;
+  else if (result === 'S') pick.pnl = 0;
+  saveTopPicks(data);
+  renderTopPicks();
+}
+
+let pickFilter = 'ALL';
+
+function setPickFilter(filter) {
+  pickFilter = filter;
+  document.querySelectorAll('#topPicksOverlay .tier-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('pickFilter' + filter.charAt(0) + filter.slice(1).toLowerCase()).classList.add('active');
+  renderTopPicks();
+}
+
+function toggleTrackBreakdown() {
+  const show = document.getElementById('showTrackBreakdown').checked;
+  document.getElementById('trackBreakdown').style.display = show ? 'block' : 'none';
+  if (show) renderTrackBreakdown();
+}
+
+function renderTrackBreakdown() {
+  const allData = loadTopPicks();
+  const allPicks = allData.picks || [];
+  const settled = allPicks.filter(function(p) { return p.result && p.result !== 'S'; });
+
+  // Group by track
+  const trackMap = {};
+  settled.forEach(function(p) {
+    const t = p.track || 'Unknown';
+    if (!trackMap[t]) trackMap[t] = { track: t, state: p.state || '', isMetro: p.isMetro, total: 0, wins: 0, places: 0, pnl: 0 };
+    trackMap[t].total++;
+    if (p.result === 'W') { trackMap[t].wins++; trackMap[t].places++; }
+    if (p.result === 'P') trackMap[t].places++;
+    trackMap[t].pnl += p.pnl || 0;
+  });
+
+  const tracks = Object.values(trackMap).sort(function(a,b) { return b.total - a.total; });
+  const grid = document.getElementById('trackBreakdownGrid');
+
+  if (tracks.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text3);font-size:13px">Enter results to see track breakdown</p>';
+    return;
+  }
+
+  grid.innerHTML = tracks.map(function(t) {
+    const winRate = t.total > 0 ? (t.wins / t.total * 100).toFixed(0) : 0;
+    const placeRate = t.total > 0 ? (t.places / t.total * 100).toFixed(0) : 0;
+    const pnlColor = t.pnl > 0 ? 'var(--green)' : t.pnl < 0 ? 'var(--red)' : 'var(--text2)';
+    const metroTag = t.isMetro ? '<span style="font-size:9px;background:rgba(240,180,41,0.15);color:var(--gold);padding:1px 5px;border-radius:3px;margin-left:4px">M</span>' : '';
+    return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">' +
+      '<div style="font-weight:600;font-size:13px;margin-bottom:6px">' + t.track + metroTag + '</div>' +
+      '<div style="font-size:11px;color:var(--text2);margin-bottom:4px">' + t.state + ' · ' + t.total + ' races</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-family:DM Mono,monospace;font-size:11px">' +
+        '<div style="text-align:center"><div style="color:var(--text3)">Win%</div><div style="color:var(--text)">' + winRate + '%</div></div>' +
+        '<div style="text-align:center"><div style="color:var(--text3)">Place%</div><div style="color:var(--text)">' + placeRate + '%</div></div>' +
+        '<div style="text-align:center"><div style="color:var(--text3)">P&L</div><div style="color:' + pnlColor + '">' + (t.pnl >= 0 ? '+' : '') + '$' + t.pnl.toFixed(0) + '</div></div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderTopPicks() {
+  const data = loadTopPicks();
+  let picks = data.picks || [];
+
+  // Apply metro/country filter
+  if (pickFilter === 'METRO') picks = picks.filter(function(p) { return p.isMetro; });
+  if (pickFilter === 'COUNTRY') picks = picks.filter(function(p) { return !p.isMetro; });
+
+  // Stats
+  const settled = picks.filter(function(p) { return p.result && p.result !== 'S'; });
+  const wins = settled.filter(function(p) { return p.result === 'W'; });
+  const places = settled.filter(function(p) { return p.result === 'P' || p.result === 'W'; });
+  const totalPnl = settled.reduce(function(s,p) { return s + (p.pnl || 0); }, 0);
+
+  document.getElementById('pickStatTotal').textContent = picks.length;
+  document.getElementById('pickStatWin').textContent = settled.length > 0
+    ? (wins.length / settled.length * 100).toFixed(0) + '%' : '—';
+  document.getElementById('pickStatPlace').textContent = settled.length > 0
+    ? (places.length / settled.length * 100).toFixed(0) + '%' : '—';
+  const pnlEl = document.getElementById('pickStatPnl');
+  pnlEl.textContent = settled.length > 0
+    ? (totalPnl >= 0 ? '+' : '') + totalPnl.toFixed(2) + 'u' : '—';
+  pnlEl.style.color = totalPnl > 0 ? 'var(--green)' : totalPnl < 0 ? 'var(--red)' : '';
+
+  const tbody = document.getElementById('picksBody');
+  if (picks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:40px;color:var(--text3)">Load races and click through them to populate top picks for today</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = picks.map(function(pick, idx) {
+    const isTop = idx === 0;
+    const gapWidth = Math.min(100, pick.scoreGap * 8);
+    const resultBtns =
+      '<button class="pick-result-btn ' + (pick.result==='W'?'win':'') + '" onclick="setPickResult(&quot;' + pick.id + '&quot;,&quot;W&quot;)">W</button>' +
+      '<button class="pick-result-btn ' + (pick.result==='P'?'place':'') + '" onclick="setPickResult(&quot;' + pick.id + '&quot;,&quot;P&quot;)">P</button>' +
+      '<button class="pick-result-btn ' + (pick.result==='L'?'loss':'') + '" onclick="setPickResult(&quot;' + pick.id + '&quot;,&quot;L&quot;)">L</button>' +
+      '<button class="pick-result-btn ' + (pick.result==='S'?'scratch':'') + '" onclick="setPickResult(&quot;' + pick.id + '&quot;,&quot;S&quot;)">S</button>';
+    const pnlDisplay = pick.pnl !== null
+      ? '<span style="font-family:DM Mono,monospace;color:' + (pick.pnl>0?'var(--green)':pick.pnl<0?'var(--red)':'var(--text2)') + '">'
+        + (pick.pnl>=0?'+':'') + pick.pnl.toFixed(2) + 'u</span>'
+      : '<span style="color:var(--text3)">—</span>';
+
+    return '<tr class="' + (isTop ? 'pick-top' : '') + '">' +
+      '<td style="font-family:DM Mono,monospace;color:var(--gold);font-weight:600">' + (idx+1) + '</td>' +
+      '<td>' + pick.track + '</td>' +
+      '<td style="font-size:11px;color:var(--text2)">R' + pick.raceNum + '</td>' +
+      '<td style="font-weight:600">' + pick.horse + '</td>' +
+      '<td><div class="dominance-bar">' +
+        '<div class="dominance-fill" style="width:' + Math.min(100, pick.algoScore * 1.2) + 'px"></div>' +
+        '<span class="dominance-val">' + pick.algoScore + '</span>' +
+      '</div></td>' +
+      '<td><div class="dominance-bar">' +
+        '<div class="dominance-fill" style="width:' + gapWidth + 'px;background:var(--green)"></div>' +
+        '<span class="dominance-val" style="color:var(--green)">+' + pick.scoreGap + '</span>' +
+      '</div></td>' +
+      '<td style="font-family:DM Mono,monospace;color:var(--text2)">' + (pick.winPct ? pick.winPct.toFixed(1)+'%' : '—') + '</td>' +
+      '<td style="font-family:DM Mono,monospace;color:var(--text2)">' + (pick.placePct ? pick.placePct.toFixed(1)+'%' : '—') + '</td>' +
+      '<td style="font-family:DM Mono,monospace;color:var(--gold)">' + (pick.bfOdds ? '$'+pick.bfOdds.toFixed(2) : '—') + '</td>' +
+      '<td style="font-family:DM Mono,monospace;font-size:11px;color:var(--gold);letter-spacing:1px">' + (pick.last10 || '—') + '</td>' +
+      '<td>' + resultBtns + '</td>' +
+      '<td>' + pnlDisplay + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function exportPicksCSV() {
+  const data = loadTopPicks();
+  const picks = data.picks || [];
+  if (picks.length === 0) { showToast('No picks to export', ''); return; }
+  const headers = ['Rank','Date','Track','Race','Horse','Algo Score','Score Gap','Win%','Place%','BF Odds','Last10','Result','PnL'];
+  const rows = picks.map(function(p, i) {
+    return [i+1, p.date, p.track, 'R'+p.raceNum, p.horse, p.algoScore, p.scoreGap,
+      p.winPct.toFixed(1)+'%', p.placePct.toFixed(1)+'%',
+      p.bfOdds ? '$'+p.bfOdds.toFixed(2) : '',
+      p.last10 || '', p.result || '', p.pnl !== null ? p.pnl.toFixed(2)+'u' : ''].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'top_picks_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Top picks exported', 'success');
+}
+
+// Wire up top picks UI
+document.getElementById('topPicksBtn').addEventListener('click', function() {
+  renderTopPicks();
+  document.getElementById('topPicksOverlay').classList.remove('hidden');
+});
+document.getElementById('closeTopPicks').addEventListener('click', function() {
+  document.getElementById('topPicksOverlay').classList.add('hidden');
+});
+document.getElementById('refreshTopPicks').addEventListener('click', function() {
+  renderTopPicks();
+  if (document.getElementById('showTrackBreakdown').checked) renderTrackBreakdown();
+  showToast('Top picks refreshed', 'success');
+});
+document.getElementById('exportPicksCsvBtn').addEventListener('click', exportPicksCSV);
+
+// ─── RESULTS TRACKER ────────────────────────────────────────
+const TRACKER_KEY = 'waRacingBetTracker';
+let trackerFilter = 'ALL';
+
+function loadBets() {
+  try { return JSON.parse(localStorage.getItem(TRACKER_KEY) || '[]'); } catch(e) { return []; }
+}
+
+function saveBets(bets) {
+  localStorage.setItem(TRACKER_KEY, JSON.stringify(bets));
+}
+
+function logBetRecommendation(race, runner) {
+  if (!runner.tier || runner.tier === 'SKIP') return false;
+  const bets = loadBets();
+  const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+  // Avoid duplicate logging same horse at same track/race on same day
+  const exists = bets.find(function(b) {
+    return b.horse === (runner.runnerName || runner.name || '') &&
+           b.track === (race.venueName || '') &&
+           b.raceNum === String(race.number || race.raceNumber || '?') &&
+           b.date === raceDay;
+  });
+  if (exists) {
+    // If pinned entry has no odds yet, update them now they've loaded
+    if (exists._pinKey && exists.odds === 0 && runner.bfOdds) {
+      exists.odds = runner.bfOdds;
+      exists.horseNum = exists.horseNum || String(runner.tabNo || runner.runnerNumber || '');
+      exists.comment = '📌 Manually pinned';
+      saveBets(bets);
+      renderTracker();
+    }
+    return false; // don't re-alert Discord
+  }
+  const bet = {
+    id: Date.now() + '_' + Math.random().toString(36).substr(2,5),
+    date: race.startTime
+      ? new Date(race.startTime).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' })
+      : new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' }),
+    track: race.venueName || race.trackName || 'Unknown',
+    raceNum: race.number || race.raceNumber || '?',
+    raceName: race.name || race.raceName || '',
+    raceId: race.raceId || race.name || '',
+    horseNum: String(runner.tabNo || runner.runnerNumber || ''),
+    horse: runner.runnerName || runner.name || 'Unknown',
+    distance: (selectedRace && selectedRace.distance) || (selectedRace && selectedRace.raceDistance) || 0,
+    runnerId: runner.runnerId || runner.runnerName,
+    tier: runner.tier,
+    betType: runner.betType || 'WIN',
+    odds: runner.bfOdds || 0,
+    stake: runner.suggestedStake || (config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 25),
+    ev: runner.ev || 0,
+    result: null, // W, P, L, S
+    pnl: null
+  };
+  bets.unshift(bet);
+  saveBets(bets);
+  renderTracker();
+  return true;
+}
+
+function setResult(betId, result) {
+  const bets = loadBets();
+  const bet = bets.find(function(b) { return b.id === betId; });
+  if (!bet) return;
+  bet.result = result;
+  // Calculate P&L in units (1 unit = 1x stake)
+  const stake = bet.stake || 10; // fallback $10 if no stake recorded
+  if (result === 'W') {
+    bet.pnl = bet.betType === 'E/W'
+      ? ((bet.odds - 1) * stake) + ((bet.odds / 4 - 1) * stake)
+      : Math.round((bet.odds - 1) * stake * 100) / 100;
+  } else if (result === 'P') {
+    // WIN bet: place = full stake loss. E/W: pay place return minus win stake.
+    bet.pnl = bet.betType === 'E/W'
+      ? Math.round(((bet.odds / 4 - 1) * stake - stake) * 100) / 100
+      : -stake;
+  } else if (result === 'L') {
+    bet.pnl = bet.betType === 'E/W' ? -(stake * 2) : -stake;
+  } else if (result === 'S') {
+    bet.pnl = 0;
+  } else {
+    bet.pnl = null;
+  }
+  saveBets(bets);
+  renderTracker();
+}
+
+function setTiming(betId, timing) {
+  const bets = loadBets();
+  const bet = bets.find(function(b) { return b.id === betId; });
+  if (!bet) return;
+  bet.timing = bet.timing === timing ? null : timing; // toggle
+  saveBets(bets);
+  renderTracker();
+}
+
+function setComment(betId, comment) {
+  const bets = loadBets();
+  const bet = bets.find(function(b) { return b.id === betId; });
+  if (!bet) return;
+  bet.comment = comment;
+  saveBets(bets);
+}
+
+function deletebet(betId) {
+  const bets = loadBets().filter(function(b) { return b.id !== betId; });
+  saveBets(bets);
+  renderTracker();
+}
+
+function calcStats(bets) {
+  const settled = bets.filter(function(b) { return b.result && b.result !== 'S'; });
+  const wins = settled.filter(function(b) { return b.result === 'W'; });
+  const places = settled.filter(function(b) { return b.result === 'P' || b.result === 'W'; });
+  const totalPnl = settled.reduce(function(s, b) { return s + (b.pnl || 0); }, 0);
+  const totalStaked = settled.reduce(function(s, b) {
+    return s + (b.betType === 'E/W' ? b.stake * 2 : b.stake);
+  }, 0);
+  return {
+    total: bets.length,
+    settled: settled.length,
+    wins: wins.length,
+    places: places.length,
+    winRate: settled.length > 0 ? (wins.length / settled.length * 100).toFixed(1) : 0,
+    placeRate: settled.length > 0 ? (places.length / settled.length * 100).toFixed(1) : 0,
+    pnl: totalPnl,
+    roi: totalStaked > 0 ? (totalPnl / totalStaked * 100).toFixed(1) : 0
+  };
+}
+
+function timingStats(bets) {
+  const s = bets.filter(function(b) { return b.result && b.result !== 'S'; });
+  const w = s.filter(function(b) { return b.result === 'W'; });
+  const pnl = bets.reduce(function(a,b) { return a + (b.pnl||0); }, 0);
+  return { total: bets.length, winRate: s.length ? (w.length/s.length*100).toFixed(0)+'%' : '—', pnl: pnl };
+}
+
+function renderTracker() {
+  const allBets = loadBets();
+  const filtered = trackerFilter === 'ALL' ? allBets : allBets.filter(function(b) { return b.tier === trackerFilter; });
+  const stats = calcStats(filtered);
+
+  // Update timing breakdown
+  const nightBets = filtered.filter(function(b) { return b.timing === 'night'; });
+  const dayBets = filtered.filter(function(b) { return b.timing === 'day'; });
+
+  const ns = timingStats(nightBets);
+  const ds = timingStats(dayBets);
+
+  if (document.getElementById('nightBets')) {
+    document.getElementById('nightBets').textContent = ns.total;
+    document.getElementById('nightWin').textContent = ns.winRate;
+    const nPnlEl = document.getElementById('nightPnl');
+    nPnlEl.textContent = ns.total ? (ns.pnl >= 0 ? '+' : '') + '$' + ns.pnl.toFixed(0) : '—';
+    nPnlEl.style.color = ns.pnl > 0 ? 'var(--green)' : ns.pnl < 0 ? 'var(--red)' : '';
+    document.getElementById('dayBets').textContent = ds.total;
+    document.getElementById('dayWin').textContent = ds.winRate;
+    const dPnlEl = document.getElementById('dayPnl');
+    dPnlEl.textContent = ds.total ? (ds.pnl >= 0 ? '+' : '') + '$' + ds.pnl.toFixed(0) : '—';
+    dPnlEl.style.color = ds.pnl > 0 ? 'var(--green)' : ds.pnl < 0 ? 'var(--red)' : '';
+  }
+
+  // Update stat cards
+  document.getElementById('statTotal').textContent = stats.total;
+  document.getElementById('statWinRate').textContent = stats.winRate + '%';
+  document.getElementById('statPlaceRate').textContent = stats.placeRate + '%';
+  const pnlEl = document.getElementById('statPnl');
+  pnlEl.textContent = (stats.pnl >= 0 ? '+' : '') + stats.pnl.toFixed(2);
+  pnlEl.className = 'value ' + (stats.pnl > 0 ? 'pos' : stats.pnl < 0 ? 'neg' : '');
+  const roiEl = document.getElementById('statRoi');
+  roiEl.textContent = (stats.roi >= 0 ? '+' : '') + stats.roi + '%';
+  roiEl.className = 'value ' + (parseFloat(stats.roi) > 0 ? 'pos' : parseFloat(stats.roi) < 0 ? 'neg' : '');
+
+  // Render bets table
+  const tbody = document.getElementById('betsBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" class="no-bets-msg">No bets logged for this filter yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(bet) {
+    const tierClass = bet.tier === 'A' ? 'tier-a' : bet.tier === 'B' ? 'tier-b' : 'tier-c';
+    const resultLabel = bet.result === 'W' ? 'WIN' : bet.result === 'P' ? 'PLACE' : bet.result === 'L' ? 'LOSS' : bet.result === 'S' ? 'SCR' : '—';
+    const resultClass = bet.result === 'W' ? 'pos' : bet.result === 'L' ? 'neg' : '';
+    const pnlDisplay = bet.pnl !== null
+      ? '<span style="color:' + (bet.pnl > 0 ? 'var(--green)' : bet.pnl < 0 ? 'var(--red)' : 'var(--text2)') + ';font-family:DM Mono,monospace">'
+        + (bet.pnl >= 0 ? '+' : '') + '$' + bet.pnl.toFixed(2) + '</span>'
+      : '<span style="color:var(--text3)">—</span>';
+    return '<tr>' +
+      '<td style="color:var(--text2);font-size:11px;white-space:nowrap">' + bet.date + '</td>' +
+      '<td>' + bet.track + '</td>' +
+      '<td style="font-size:11px;color:var(--text2)">R' + bet.raceNum + '</td>' +
+      '<td style="font-weight:600">' + (bet.horseNum ? '<span style="font-family:DM Mono,monospace;color:var(--text3);font-size:11px;margin-right:5px">' + bet.horseNum + '</span>' : '') + bet.horse + '</td>' +
+      '<td><span class="tier-badge ' + tierClass + '">' + bet.tier + '</span></td>' +
+      '<td style="font-size:11px;color:var(--text2)">' + bet.betType + '</td>' +
+      '<td style="font-family:DM Mono,monospace;color:var(--gold)">' + (bet.odds ? bet.odds.toFixed(2) : '—') + '</td>' +
+      '<td style="font-family:DM Mono,monospace">$' + (bet.stake ? bet.stake.toFixed(2) : '0.00') + '</td>' +
+      '<td style="font-size:11px;color:var(--text2)">' + (bet.distance ? bet.distance + 'm' : '—') + '</td>' +
+      '<td style="font-family:DM Mono,monospace;font-size:11px;color:' + (bet.ev > 0 ? 'var(--green)' : 'var(--text3)') + '">' +
+        (bet.ev ? (bet.ev > 0 ? '+' : '') + (bet.ev * 100).toFixed(1) + '%' : '—') + '</td>' +
+      '<td>' +
+        '<button class="result-btn ' + (bet.result === "W" ? "win" : "") + '" onclick="setResult(&quot;' + bet.id + '&quot;,&quot;W&quot;)">W</button>' +
+        '<button class="result-btn ' + (bet.result === "P" ? "place" : "") + '" onclick="setResult(&quot;' + bet.id + '&quot;,&quot;P&quot;)">P</button>' +
+        '<button class="result-btn ' + (bet.result === "L" ? "loss" : "") + '" onclick="setResult(&quot;' + bet.id + '&quot;,&quot;L&quot;)">L</button>' +
+        '<button class="result-btn ' + (bet.result === "S" ? "scratch" : "") + '" onclick="setResult(&quot;' + bet.id + '&quot;,&quot;S&quot;)">S</button>' +
+      '</td>' +
+      '<td>' + pnlDisplay + '</td>' +
+      '<td>' +
+        '<button class="result-btn ' + (bet.timing==="night" ? "win" : "") + '" onclick="setTiming(&quot;' + bet.id + '&quot;,&quot;night&quot;)" title="Night before">Night</button>' +
+        '<button class="result-btn ' + (bet.timing==="day" ? "place" : "") + '" onclick="setTiming(&quot;' + bet.id + '&quot;,&quot;day&quot;)" title="Race day">Day</button>' +
+      '</td>' +
+      '<td><input type="text" data-id="' + bet.id + '" placeholder="notes..." onchange="setComment(this.dataset.id,this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;padding:3px 6px;width:110px"></td>' +
+      '<td><button onclick="deletebet(&quot;' + bet.id + '&quot;)" style="background:rgba(240,82,82,0.15);border:1px solid rgba(240,82,82,0.3);color:var(--red);cursor:pointer;font-size:11px;padding:3px 7px;border-radius:4px;font-weight:600" title="Delete">DEL</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function exportCSV() {
+  const bets = loadBets();
+  if (bets.length === 0) { showToast('No bets to export', ''); return; }
+  const headers = ['Date','Track','Race','Horse','Tier','Type','Odds','Stake','EV%','Result','PnL','Timing','Distance','Notes'];
+  const rows = bets.map(function(b) {
+    return [b.date, b.track, 'R'+b.raceNum, (b.horseNum ? b.horseNum + '. ' : '') + b.horse, b.tier, b.betType,
+      b.odds ? b.odds.toFixed(2) : '', b.stake ? b.stake.toFixed(2) : '',
+      b.ev ? (b.ev*100).toFixed(1)+'%' : '', b.result || '', b.pnl !== null ? b.pnl.toFixed(2) : '', b.timing || '', b.distance || '', (b.comment || '')].join(',');
+  });
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'racing_bets_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('CSV exported', 'success');
+}
+
+// Wire up tracker UI
+document.getElementById('trackerBtn').addEventListener('click', function() {
+  renderTracker();
+  document.getElementById('trackerOverlay').classList.remove('hidden');
+});
+document.getElementById('closeTracker').addEventListener('click', function() {
+  document.getElementById('trackerOverlay').classList.add('hidden');
+});
+document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+
+document.getElementById('clearBetsBtn').addEventListener('click', function() {
+  if (confirm('Clear all tracked bets? This cannot be undone.')) {
+    localStorage.removeItem(TRACKER_KEY);
+    renderTracker();
+    showToast('All bets cleared', '');
+  }
+});
+document.querySelectorAll('.tier-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tier-tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    trackerFilter = tab.dataset.tier;
+    renderTracker();
+  });
+});
+
+// ─── INIT ───────────────────────────────────────────────────
+// ─── DISCORD NOTIFICATIONS ───────────────────────────────────
+const discordSentBets = new Set(); // track what we've already notified
+
+async function sendDiscordAlert(race, runner, isUpdate) {
+  if (!config.discordWebhook) return;
+
+  // Build unique key for this bet
+  const betKey = (race.venueName || '') + '_R' + (race.number || race.raceNumber) + '_' + (runner.runnerName || runner.name) + '_' + runner.tier;
+
+  // Don't re-notify same bet unless odds changed significantly
+  if (!isUpdate && discordSentBets.has(betKey)) return;
+  discordSentBets.add(betKey);
+
+  const tierEmoji = runner.tier === 'A' ? '🥇' : '🥈';
+  const trackType = selectedMeeting && isMetroTrack(selectedMeeting.venueName || '') ? '🏙️ METRO' : '🌾 COUNTRY';
+  const oddsSource = runner.oddsSource === 'SP' ? 'SP' : runner.oddsSource === 'OddsAPI' ? 'TAB' : 'BF';
+  const updateTag = isUpdate ? ' *(odds update)*' : '';
+
+  const embed = {
+    embeds: [{
+      color: runner.tier === 'A' ? 0xF0B429 : 0x4A9EFF,
+      title: tierEmoji + ' ' + runner.tier + ' Tier Bet' + (isUpdate ? ' — Odds Update' : ' — New Recommendation'),
+      fields: [
+        { name: '🏇 Horse', value: '**' + (runner.runnerName || runner.name || 'Unknown') + '**', inline: true },
+        { name: '📍 Track', value: (race.venueName || 'Unknown') + ' ' + trackType, inline: true },
+        { name: '🏁 Race', value: 'R' + (race.number || race.raceNumber || '?') + ' · ' + (race.name || ''), inline: false },
+        { name: '💰 Odds', value: '**$' + (runner.bfOdds ? runner.bfOdds.toFixed(2) : '—') + '** (' + oddsSource + ')', inline: true },
+        { name: '🎯 Type', value: runner.betType || 'WIN', inline: true },
+        { name: '💵 Stake', value: runner.suggestedStake ? '$' + runner.suggestedStake.toFixed(2) : '—', inline: true },
+        { name: '📊 Algo Score', value: (runner.algoScore || 0).toFixed(1), inline: true },
+        { name: '📈 Career', value: (runner.winPct || 0).toFixed(1) + '% win · ' + (runner.placePct || 0).toFixed(1) + '% place', inline: true },
+        { name: '📋 Last 10', value: runner.last10str || '—', inline: true },
+      ],
+      footer: { text: 'Form Lab · ' + new Date().toLocaleTimeString('en-AU', { timeZone: 'Australia/Perth', hour: '2-digit', minute: '2-digit' }) + ' AWST' },
+      timestamp: new Date().toISOString()
+    }]
+  };
+
+  try {
+    await fetch(PROXY + encodeURIComponent(config.discordWebhook), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(embed)
+    });
+    console.log('Discord alert sent:', runner.runnerName, runner.tier, '$' + runner.bfOdds);
+  } catch(e) {
+    console.warn('Discord alert failed:', e.message);
+  }
+}
+
+async function sendDiscordDailySummary() {
+  if (!config.discordWebhook) return;
+  const bets = loadBets();
+  const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+  const todayBets = bets.filter(function(b) { return b.date === today; });
+  if (todayBets.length === 0) return;
+
+  const lines = todayBets.map(function(b) {
+    return '• **' + b.horse + '** — ' + b.track + ' R' + b.raceNum + ' · $' + (b.odds||'—') + ' · ' + (b.result || 'Pending');
+  }).join('\n');
+
+  const embed = {
+    embeds: [{
+      color: 0x2ECC8A,
+      title: '📋 Today\'s Bet Summary — ' + today,
+      description: lines || 'No bets today',
+      footer: { text: 'Form Lab Daily Summary' },
+      timestamp: new Date().toISOString()
+    }]
+  };
+
+  try {
+    await fetch(PROXY + encodeURIComponent(config.discordWebhook), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(embed)
+    });
+    showToast('Daily summary sent to Discord', 'success');
+  } catch(e) {
+    console.warn('Discord summary failed:', e.message);
+  }
+}
+
+// ─── AUTO-SCAN ───────────────────────────────────────────────
+let autoScanTimer = null;
+let autoScanAlerted = new Set(); // track which bets have already been alerted
+let autoScanRunning = false;
+const AUTO_SCAN_INTERVAL = 30 * 60 * 1000; // 30 minutes
+
+async function autoScanAllRaces() {
+  if (autoScanRunning) return;
+  if (!allMeetings || allMeetings.length === 0) return;
+  autoScanRunning = true;
+
+  console.log('Auto-scan starting — scanning', allRaces.length, 'races...');
+  updateAutoScanStatus('scanning');
+
+  let newAlerts = 0;
+
+  for (const race of allRaces) {
+    try {
+      // Skip races that have already started (more than 5 mins past start time)
+      const startTime = new Date(race.startTime || race.raceTime);
+      const now = new Date();
+      if (!isNaN(startTime) && startTime < new Date(now - 5 * 60 * 1000)) continue;
+
+      // Find the meeting for this race
+      const meeting = allMeetings.find(function(m) {
+        return m.races && m.races.some(function(r) {
+          return r.raceId === race.raceId || r.number === race.number;
+        });
+      });
+      if (!meeting) continue;
+
+      // Fetch form data for this race silently
+      const formData = await pfFetch('form', {
+        meetingId: meeting.meetingId,
+        raceNumber: race.number || race.raceNumber,
+        runs: 10
+      });
+      if (!formData || !formData.payLoad) continue;
+
+      const formPayload = Array.isArray(formData.payLoad) ? formData.payLoad : [];
+      if (formPayload.length === 0) continue;
+
+      // Build runners with basic scoring
+      let runners = formPayload.map(function(formR) {
+        return Object.assign({}, formR, {
+          runnerName: formR.name,
+          algoScore: 50, // placeholder — will be scored below
+          bfOdds: formR.priceSP || 0,
+          oddsSource: 'SP'
+        });
+      });
+
+      // Apply Ladbrokes odds if available
+      if (config.lbFrom && meeting) {
+        runners = await applyLbOdds(runners, meeting.venueName || '', race.number || race.raceNumber || 1);
+      }
+
+      // Score runners
+      const raceConditions = {
+        going: race.trackCondition || 'Good',
+        trackCondition: race.trackCondition || 'Good',
+        railPos: race.railPosition || '',
+        raceDistance: race.distance || 1200,
+        prizeMoney: race.prizeMoney || 10000,
+        isWaRace: isWaRaceVenue(meeting.venueName || meeting.trackName || ''),
+        venueName: meeting.venueName || meeting.trackName || '',
+        trackSurface: meeting.trackSurface || ''
+      };
+
+      runners = runners.map(function(r) {
+        const score = scoreRunner(r, raceConditions);
+        return Object.assign({}, r, { algoScore: score });
+      });
+
+      // Get recommendations
+      runners = runners.map(function(r) {
+        const tier = r.bfOdds ? getRecommendation(r, runners, fullRace, meeting) : null;
+        return Object.assign({}, r, { tier: tier });
+      });
+
+      // Check for new recommendations
+      const recommended = runners.filter(function(r) { return r.tier && r.tier !== 'SKIP'; });
+
+      for (const r of recommended) {
+        const alertKey = (meeting.venueName || '') + '|R' + (race.number || race.raceNumber) + '|' + (r.runnerName || r.name || '');
+        if (autoScanAlerted.has(alertKey)) continue; // already alerted this session
+        autoScanAlerted.add(alertKey);
+        newAlerts++;
+
+        // Send Discord alert
+        const fakeRace = Object.assign({}, race, { venueName: meeting.venueName || meeting.trackName || '' });
+        await sendDiscordAlert(fakeRace, r, false);
+
+        // Also log to tracker
+        logBetRecommendation(fakeRace, r);
+
+        console.log('Auto-scan alert:', r.runnerName, tier, '$' + r.bfOdds, meeting.venueName);
+      }
+
+      // Small delay between races to avoid hammering API
+      await new Promise(function(resolve) { setTimeout(resolve, 300); });
+
+    } catch(e) {
+      console.warn('Auto-scan error on race:', e.message);
+    }
+  }
+
+  autoScanRunning = false;
+  const timeStr = new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+  updateAutoScanStatus('idle', timeStr, newAlerts);
+  console.log('Auto-scan complete —', newAlerts, 'new alerts sent');
+  if (newAlerts > 0) showToast('Auto-scan: ' + newAlerts + ' new recommendations found', 'success');
+}
+
+function updateAutoScanStatus(state, lastScan, newAlerts) {
+  const btn = document.getElementById('autoScanBtn');
+  const indicator = document.getElementById('autoScanIndicator');
+  if (!btn) return;
+
+  if (state === 'scanning') {
+    btn.textContent = '⏳ Scanning...';
+    btn.style.color = 'var(--gold)';
+    if (indicator) indicator.style.background = 'var(--gold)';
+  } else if (state === 'running') {
+    btn.textContent = '🔄 Auto-scan ON';
+    btn.style.color = 'var(--green)';
+    if (indicator) { indicator.style.background = 'var(--green)'; indicator.style.animation = 'pulse 2s infinite'; }
+  } else {
+    btn.textContent = autoScanTimer ? '🔄 Auto-scan ON' : '🔄 Auto-scan';
+    btn.style.color = autoScanTimer ? 'var(--green)' : '';
+    if (indicator) indicator.style.background = autoScanTimer ? 'var(--green)' : 'var(--text3)';
+  }
+}
+
+function toggleAutoScan() {
+  if (autoScanTimer) {
+    // Turn off
+    clearInterval(autoScanTimer);
+    autoScanTimer = null;
+    autoScanAlerted.clear();
+    updateAutoScanStatus('idle');
+    showToast('Auto-scan stopped', '');
+    console.log('Auto-scan stopped');
+  } else {
+    // Turn on — run immediately then every 30 mins
+    if (!allMeetings || allMeetings.length === 0) {
+      showToast('Load races first before starting auto-scan', 'error');
+      return;
+    }
+    showToast('Auto-scan started — scanning every 30 minutes', 'success');
+    autoScanAllRaces(); // run immediately
+    autoScanTimer = setInterval(autoScanAllRaces, AUTO_SCAN_INTERVAL);
+    updateAutoScanStatus('running');
+    console.log('Auto-scan started — interval:', AUTO_SCAN_INTERVAL / 60000, 'mins');
+  }
+}
+
+// ─── BETFAIR DIAGNOSTICS ─────────────────────────────────────
+async function runBFDiagnostics() {
+  const main = document.getElementById('mainPanel');
+  main.innerHTML = '<div class="loading"><div class="spinner"></div>Testing Betfair connection...</div>';
+
+  const results = [];
+
+  // Test 1: Login
+  results.push('--- TEST 1: Betfair Login ---');
+  if (bfSessionToken) {
+    results.push('✅ Already logged in, token: ' + bfSessionToken.substring(0,20) + '...');
+  } else {
+    const ok = await bfLogin();
+    results.push(ok ? '✅ Login SUCCESS' : '❌ Login FAILED');
+  }
+
+  // Test 2: listEventTypes — simplest possible call
+  results.push('--- TEST 2: listEventTypes ---');
+  const eventTypes = await bfCall('listEventTypes', { filter: {} });
+  if (eventTypes) {
+    results.push('✅ Got ' + eventTypes.length + ' event types');
+    const racing = eventTypes.find(function(e) { return e.eventType && e.eventType.id === '7'; });
+    results.push(racing ? '✅ Horse Racing (id=7) found' : '❌ Horse Racing NOT found');
+  } else {
+    results.push('❌ listEventTypes returned null');
+  }
+
+  // Test 3: listMarketCatalogue — broad search, no filters
+  results.push('--- TEST 3: listMarketCatalogue (broad) ---');
+  const broad = await bfCall('listMarketCatalogue', {
+    filter: { eventTypeIds: ['7'] },
+    marketProjection: ['MARKET_START_TIME', 'EVENT'],
+    sort: 'FIRST_TO_START',
+    maxResults: '5'
+  });
+  if (broad && broad.length > 0) {
+    results.push('✅ Got ' + broad.length + ' markets');
+    broad.forEach(function(m) {
+      results.push('   → ' + (m.marketName||'?') + ' | ' + (m.event ? m.event.name : '?') + ' @ ' + m.marketStartTime);
+    });
+  } else {
+    results.push('❌ No markets returned — broad search');
+  }
+
+  // Test 4: With AU country filter
+  results.push('--- TEST 4: listMarketCatalogue (AU filter) ---');
+  const au = await bfCall('listMarketCatalogue', {
+    filter: { eventTypeIds: ['7'], marketCountries: ['AU'] },
+    marketProjection: ['MARKET_START_TIME', 'EVENT'],
+    sort: 'FIRST_TO_START',
+    maxResults: '5'
+  });
+  if (au && au.length > 0) {
+    results.push('✅ Got ' + au.length + ' AU markets');
+    au.forEach(function(m) {
+      results.push('   → ' + (m.marketName||'?') + ' | ' + (m.event ? m.event.name + ' [' + (m.event.venue||'?') + ']' : '?') + ' @ ' + m.marketStartTime);
+    });
+  } else {
+    results.push('❌ No AU markets returned');
+  }
+
+  // Test 4b: Without WIN filter — see what market types come back
+  results.push('--- TEST 4b: AU markets WITHOUT marketTypeCodes filter ---');
+  const auAny = await bfCall('listMarketCatalogue', {
+    filter: { eventTypeIds: ['7'], marketCountries: ['AU'] },
+    marketProjection: ['MARKET_START_TIME', 'EVENT', 'MARKET_DESCRIPTION'],
+    sort: 'FIRST_TO_START',
+    maxResults: '20'
+  });
+  if (auAny && auAny.length > 0) {
+    results.push('✅ Got ' + auAny.length + ' AU markets (any type)');
+    auAny.forEach(function(m) {
+      const mtype = m.description ? m.description.marketType : '?';
+      results.push('   → [' + mtype + '] ' + (m.marketName||'?') + ' | ' + (m.event ? m.event.name + ' [' + (m.event.venue||'?') + ']' : '?') + ' @ ' + m.marketStartTime);
+    });
+  } else {
+    results.push('❌ No AU markets of any type');
+  }
+
+  // Test 5: TAB beta API test
+  results.push('--- TEST 5: TAB Beta API ---');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const tabUrl = 'https://api.beta.tab.com.au/v1/tab-info-service/racing/dates/' + today + '/meetings?jurisdiction=QLD&meetingTypes=R';
+    const tabRes = await fetch(PROXY + encodeURIComponent(tabUrl));
+    if (tabRes.ok) {
+      const tabData = await tabRes.json();
+      const meetings = tabData.meetings || tabData || [];
+      results.push('✅ TAB API accessible — ' + (Array.isArray(meetings) ? meetings.length : '?') + ' meetings');
+      if (Array.isArray(meetings) && meetings.length > 0) {
+        results.push('   Sample: ' + JSON.stringify(meetings[0]).substring(0, 200));
+      }
+    } else {
+      results.push('❌ TAB API returned status: ' + tabRes.status);
+    }
+  } catch(e) {
+    results.push('❌ TAB API error: ' + e.message);
+  }
+
+  // Test 6: In-play BF markets
+  results.push('--- TEST 5: In-play markets ---');
+  const inplay = await bfCall('listMarketCatalogue', {
+    filter: { eventTypeIds: ['7'], inPlayOnly: true },
+    marketProjection: ['MARKET_START_TIME', 'EVENT'],
+    maxResults: '5'
+  });
+  if (inplay && inplay.length > 0) {
+    results.push('✅ Got ' + inplay.length + ' in-play markets');
+    inplay.forEach(function(m) {
+      results.push('   → ' + (m.marketName||'?') + ' | ' + (m.event ? m.event.name : '?'));
+    });
+  } else {
+    results.push('❌ No in-play markets');
+  }
+
+  main.innerHTML = '<div style="padding:24px">' +
+    '<h3 style="font-family:Bebas Neue,sans-serif;font-size:20px;letter-spacing:1px;margin-bottom:16px;color:var(--gold)">Betfair API Diagnostics</h3>' +
+    '<pre style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:12px;font-family:DM Mono,monospace;line-height:1.8;overflow:auto;max-height:70vh;color:var(--text);white-space:pre-wrap">' +
+    results.join('\n') +
+    '</pre></div>';
+}
+
+document.getElementById('discordSummaryBtn').addEventListener('click', sendDiscordDailySummary);
+
+// Set date picker to today by default
+const todayISO = new Date().toISOString().split('T')[0];
+document.getElementById('raceDatePicker').value = todayISO;
+
+// Re-cache LB markets when date changes (for night-before browsing)
+document.getElementById('raceDatePicker').addEventListener('change', function() {
+  if (config.lbFrom) {
+    cacheLbMarkets(this.value).then(function() {
+      console.log('LB cache refreshed for date:', document.getElementById('raceDatePicker').value);
+    });
+  }
+});
+
+// Show metro top 10 button on Saturdays and Wednesdays
+const todayDay = new Date().getDay();
+if (todayDay === 6 || todayDay === 3) {
+  document.getElementById('satTop10Btn').style.display = 'inline-block';
+}
+
+// 1-second ticker to keep refresh UI updated
+setInterval(function() {
+  if (lastOddsRefresh) updateRefreshUI();
+}, 1000);
+
+// Viewer mode — auto-fetch config from Railway, never show settings modal
+(async function() {
+  try {
+    const r = await fetch('https://formlab-proxy-production.up.railway.app/config');
+    if (r.ok) {
+      const c = await r.json();
+      if (c.pfKey)     { config.pfKey     = c.pfKey;     localStorage.setItem('config_pfKey', c.pfKey); }
+      if (c.ffKey)     { config.ffKey     = c.ffKey;     localStorage.setItem('config_ffKey', c.ffKey); }
+      if (c.lbFrom)    { config.lbFrom    = c.lbFrom;    localStorage.setItem('config_lbFrom', c.lbFrom); }
+      if (c.lbPartner) { config.lbPartner = c.lbPartner; localStorage.setItem('config_lbPartner', c.lbPartner); }
+    }
+  } catch(e) { console.warn('Viewer config fetch failed:', e.message); }
+  loadConfig();
+  document.getElementById('settingsModal').classList.add('hidden');
+})();
+</script>
+</body>
+</html>
