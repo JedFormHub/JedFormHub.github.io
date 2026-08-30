@@ -2026,10 +2026,8 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   const isSaturday = raceDate.getDay() === 6;
   const isWednesday = raceDate.getDay() === 3;
 
-  // Hard odds filter — cap at $6.00 unless score gap is 6+ (Aug 2026: $6+ lost -$75 at 12.8%)
-  if (odds < 1.20) return 'SKIP';
-  if (odds > 6.0 && ((sortedScores[0]||0)-(sortedScores[1]||0)) < 6) return 'SKIP';
-  if (odds > 12) return 'SKIP';
+  // Hard odds filter — basic check first
+  if (odds < 1.20 || odds > 12) return 'SKIP';
 
   // Rank this runner's score in the field
   const sortedScores = allRunners
@@ -2038,6 +2036,9 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   const rank = sortedScores.indexOf(score) + 1;
   const scoreGap = (sortedScores[0] || 0) - (sortedScores[1] || 0);
   runner.scoreGap = scoreGap;
+
+  // $6+ odds cap — only allow if score gap is 6+ (Aug 2026: $6+ lost -$75 at 12.8% win rate)
+  if (odds > 6.0 && scoreGap < 6) return 'SKIP';
 
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
