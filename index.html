@@ -1783,27 +1783,16 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
         horse: runnerName,
         horseNum: String(tabNo || ''),
         distance: 0,
-        raceClass: (function() {
-          const rn = (raceName || '').toUpperCase();
-          if (rn.includes('MAIDEN')) return 'Maiden';
-          if (rn.includes('CLASS 1')) return 'Class 1';
-          if (rn.includes('CLASS 2')) return 'Class 2';
-          if (rn.includes('CLASS 3')) return 'Class 3';
-          const bm = rn.match(/BM(\d+)/);
-          if (bm) { const v = parseInt(bm[1]); if (v<=56) return 'BM50-56'; if (v<=64) return 'BM58-64'; if (v<=72) return 'BM66-72'; if (v<=80) return 'BM74-80'; return 'BM82+'; }
-          if (rn.includes('GROUP') || rn.includes('LISTED')) return 'Group/Listed';
-          return '';
-        })(),
         runnerId: runnerId,
         tier: 'A',
         betType: 'WIN',
-        odds: odds || 0,
+        odds: 0, // TBC — update when price available
         stake: config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 10,
         ev: 0,
         result: null,
         pnl: null,
         timing: 'night',
-        comment: '📌 Manually pinned'
+        comment: '📌 Manually pinned — update odds before race'
       };
       bets.unshift(bet);
       saveBets(bets);
@@ -2037,10 +2026,10 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   const isSaturday = raceDate.getDay() === 6;
   const isWednesday = raceDate.getDay() === 3;
 
-  // Hard odds filter — cap at $6.00 unless score gap is 6+ (Aug 2026: $6+ lost -$75 at 12.8% win rate)
+  // Hard odds filter — cap at $6.00 unless score gap is 6+ (Aug 2026: $6+ lost -$75 at 12.8%)
   if (odds < 1.20) return 'SKIP';
-  if (odds > 6.0 && scoreGap < 6) return 'SKIP'; // allow $6+ only with large gap
-  if (odds > 12) return 'SKIP'; // absolute cap
+  if (odds > 6.0 && ((sortedScores[0]||0)-(sortedScores[1]||0)) < 6) return 'SKIP';
+  if (odds > 12) return 'SKIP';
 
   // Rank this runner's score in the field
   const sortedScores = allRunners
@@ -2053,12 +2042,12 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
-  // SA state override — 0W from 13 bets Aug 2026. Gap raised to 6 for September.
-  // Morphettville Parks excluded entirely (0W from 12 bets Aug 2026) — re-enable for spring carnival
-  const SA_MIN_GAP = 6;
+  // SA state override — 0W from 13 bets Aug 2026. Gap raised to 6 for Sep 2026.
+  // Morphettville Parks excluded entirely (0W/12 bets Aug 2026) — re-enable for spring carnival
   const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
   const isMorphParks = venueLower.includes('morphettville parks') || venueLower.includes('morphettville park');
-  if (isMorphParks) return 'SKIP'; // excluded Aug 2026 — review for spring carnival
+  if (isMorphParks) return 'SKIP';
+  const SA_MIN_GAP = 6;
   const isSAVenue = (function() {
     return venueLower.includes('morphettville') || venueLower.includes('gawler') || venueLower.includes('balaklava') ||
            venueLower.includes('murray bridge') || venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
@@ -2069,17 +2058,12 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   if (isSAVenue) {
     minGap = SA_MIN_GAP; // SA — all track types require clear standout
   } else if (isMetro) {
-    // Wednesday gap — raised to 3 for Sep 2026 (was 2, still leaking -$120 in Aug)
-    // Spring Wednesday (Sep+) may improve — reduce back to 1 if results improve
+    // Wednesday gap raised to 3 for Sep 2026 (was 2, still -$120 in Aug)
+    // Reduce back to 1 if spring Wednesday results improve
     const WEDNESDAY_GAP = isWednesday ? 3 : 0;
-    // BM66-72 specific gap — consistent drain across Jul/Aug; apply 3 minimum for metro
-    const isBM6672 = (function() {
-      const rn = ((currentRace && (currentRace.name || currentRace.raceName || '')) || '').toUpperCase();
-      const bm = rn.match(/BM(\d+)/);
-      if (bm) { const v = parseInt(bm[1]); return v >= 66 && v <= 72; }
-      return false;
-    })();
-    const BM6672_GAP = isBM6672 ? 3 : 0;
+    // BM66-72 specific gap — persistent drain Jul/Aug; require 3 minimum at metro
+    const bm6672Match = ((currentRace && (currentRace.name || currentRace.raceName || '')) || '').toUpperCase().match(/BM(6[6-9]|7[0-2])/);
+    const BM6672_GAP = bm6672Match ? 3 : 0;
     minGap = Math.max(WEDNESDAY_GAP, BM6672_GAP);
   } else if (isProvincial) {
     minGap = 3; // provincial — require clear standout, field quality inconsistent
@@ -2099,13 +2083,13 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
     raceName.includes('2yo') || raceName.includes('3yo');
   if (isMaiden) return 'SKIP';
 
-  // Belmont Park volume limit — max 3 Tier A bets per day (Aug 2026: 50 bets, high volume bleeding)
+  // Belmont Park volume limit — max 3 Tier A bets per day (Aug: 50 bets, volume bleeding)
   const isBelmont = venueLower.includes('belmont park') || venueLower.includes('belmont');
   if (isBelmont) {
-    const belmontBetsToday = (saturdayBetPool || []).filter(function(b) {
+    const belmontCount = (saturdayBetPool || []).filter(function(b) {
       return (b.venueName || '').toLowerCase().includes('belmont');
     }).length;
-    if (belmontBetsToday >= 3) return 'SKIP'; // Belmont daily limit reached
+    if (belmontCount >= 3) return 'SKIP';
   }
 
   if (rank === 1 && odds >= 1.20 && scoreGap >= minGap) {
@@ -3384,21 +3368,14 @@ function addTopPick(race, runner, allRunners) {
     horse: runner.runnerName || runner.name || 'Unknown',
     distance: (selectedRace && selectedRace.distance) || (selectedRace && selectedRace.raceDistance) || 0,
     raceClass: (function() {
-      const rn = ((race.name || race.raceName || selectedRace && selectedRace.name || '') + ' ' +
-                  (race.raceClass || selectedRace && selectedRace.raceClass || '')).toUpperCase();
+      const rn = ((race.name || race.raceName || (selectedRace && selectedRace.name) || '') + ' ' +
+                  (race.raceClass || (selectedRace && selectedRace.raceClass) || '')).toUpperCase();
       if (rn.includes('MAIDEN') || rn.includes('MDN')) return 'Maiden';
-      if (rn.includes('CLASS 1') || rn.includes('CL1')) return 'Class 1';
-      if (rn.includes('CLASS 2') || rn.includes('CL2')) return 'Class 2';
-      if (rn.includes('CLASS 3') || rn.includes('CL3')) return 'Class 3';
+      if (rn.includes('CLASS 1')) return 'Class 1';
+      if (rn.includes('CLASS 2')) return 'Class 2';
+      if (rn.includes('CLASS 3')) return 'Class 3';
       const bm = rn.match(/BM(\d+)/);
-      if (bm) {
-        const v = parseInt(bm[1]);
-        if (v <= 56) return 'BM50-56';
-        if (v <= 64) return 'BM58-64';
-        if (v <= 72) return 'BM66-72';
-        if (v <= 80) return 'BM74-80';
-        return 'BM82+';
-      }
+      if (bm) { const v = parseInt(bm[1]); if(v<=56) return 'BM50-56'; if(v<=64) return 'BM58-64'; if(v<=72) return 'BM66-72'; if(v<=80) return 'BM74-80'; return 'BM82+'; }
       if (rn.includes('GROUP 1') || rn.includes('G1 ')) return 'Group 1';
       if (rn.includes('GROUP 2') || rn.includes('G2 ')) return 'Group 2';
       if (rn.includes('GROUP 3') || rn.includes('G3 ')) return 'Group 3';
