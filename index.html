@@ -414,16 +414,13 @@
     <span id="oddsRefreshLabel" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;display:none">
       odds updated <span id="lastRefreshTime">—</span> · <span id="nextRefreshIn">—</span>
     </span>
-    <button class="btn" id="autoScanBtn" title="Auto-scan all races every 30 mins">🔄 Auto-scan</button>
-    <button class="btn" id="bfDiagBtn" title="Test Betfair connection">🔧 BF Test</button>
-    <button class="btn" id="discordSummaryBtn" title="Send daily summary to Discord">📨 Send Summary</button>
     <button class="btn" id="satTop10Btn" style="display:none">🏆 Metro Top 10</button>
     <button class="btn" id="topPicksBtn">🏆 Top Picks</button>
-    <button class="btn" id="trackerBtn">📊 Results Tracker</button>
+    <button class="btn" id="discordSummaryBtn" title="Send daily summary to Discord">📨 Summary</button>
+    <button class="btn" id="trackerBtn">📊 Tracker</button>
     <button class="btn" id="settingsBtn">⚙ Settings</button>
     <input type="date" id="raceDatePicker" style="padding:7px 10px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;" title="Select race date">
     <button class="btn btn-primary" id="loadRacesBtn">Load Races</button>
-    <button class="btn" id="debugBtn" title="Show raw API response">Debug API</button>
   </div>
 </header>
 
@@ -1786,16 +1783,27 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
         horse: runnerName,
         horseNum: String(tabNo || ''),
         distance: 0,
+        raceClass: (function() {
+          const rn = (raceName || '').toUpperCase();
+          if (rn.includes('MAIDEN')) return 'Maiden';
+          if (rn.includes('CLASS 1')) return 'Class 1';
+          if (rn.includes('CLASS 2')) return 'Class 2';
+          if (rn.includes('CLASS 3')) return 'Class 3';
+          const bm = rn.match(/BM(\d+)/);
+          if (bm) { const v = parseInt(bm[1]); if (v<=56) return 'BM50-56'; if (v<=64) return 'BM58-64'; if (v<=72) return 'BM66-72'; if (v<=80) return 'BM74-80'; return 'BM82+'; }
+          if (rn.includes('GROUP') || rn.includes('LISTED')) return 'Group/Listed';
+          return '';
+        })(),
         runnerId: runnerId,
         tier: 'A',
         betType: 'WIN',
-        odds: 0, // TBC — update when price available
+        odds: odds || 0,
         stake: config.bankSize ? config.bankSize * (config.maxStakePct || 5) / 100 : 10,
         ev: 0,
         result: null,
         pnl: null,
         timing: 'night',
-        comment: '📌 Manually pinned — update odds before race'
+        comment: '📌 Manually pinned'
       };
       bets.unshift(bet);
       saveBets(bets);
@@ -2029,8 +2037,10 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   const isSaturday = raceDate.getDay() === 6;
   const isWednesday = raceDate.getDay() === 3;
 
-  // Hard odds filter
-  if (odds < 1.20 || odds > 8) return 'SKIP';
+  // Hard odds filter — cap at $6.00 unless score gap is 6+ (Aug 2026: $6+ lost -$75 at 12.8% win rate)
+  if (odds < 1.20) return 'SKIP';
+  if (odds > 6.0 && scoreGap < 6) return 'SKIP'; // allow $6+ only with large gap
+  if (odds > 12) return 'SKIP'; // absolute cap
 
   // Rank this runner's score in the field
   const sortedScores = allRunners
@@ -2043,31 +2053,34 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
-  // SA state override — model underperforms in SA, require clear standout across all track types
-  // Applies to Morphettville, Morphettville Parks, Gawler, Balaklava, Murray Bridge, Strathalbyn etc.
-  // Change SA_MIN_GAP back to 0 if SA performance improves in spring
-  const SA_MIN_GAP = 4;
+  // SA state override — 0W from 13 bets Aug 2026. Gap raised to 6 for September.
+  // Morphettville Parks excluded entirely (0W from 12 bets Aug 2026) — re-enable for spring carnival
+  const SA_MIN_GAP = 6;
+  const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
+  const isMorphParks = venueLower.includes('morphettville parks') || venueLower.includes('morphettville park');
+  if (isMorphParks) return 'SKIP'; // excluded Aug 2026 — review for spring carnival
   const isSAVenue = (function() {
-    const v = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
-    return v.includes('morphettville') || v.includes('gawler') || v.includes('balaklava') ||
-           v.includes('murray bridge') || v.includes('strathalbyn') || v.includes('mt gambier') ||
-           v.includes('naracoorte') || v.includes('port augusta') || v.includes('murray bridge');
+    return venueLower.includes('morphettville') || venueLower.includes('gawler') || venueLower.includes('balaklava') ||
+           venueLower.includes('murray bridge') || venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
+           venueLower.includes('naracoorte') || venueLower.includes('port augusta');
   })();
 
   let minGap;
   if (isSAVenue) {
     minGap = SA_MIN_GAP; // SA — all track types require clear standout
   } else if (isMetro) {
-    // Winter Wednesday (June-Aug) — weaker fields, require a clear standout
-    // Change WINTER_WEDNESDAY_GAP to 0 in spring/autumn when metro Wednesdays strengthen
-    const WINTER_WEDNESDAY_GAP = 2;
-    const month = new Date().getMonth() + 1; // 1=Jan, 12=Dec
-    const isWinterMonth = month >= 6 && month <= 8;
-    if (isWednesday && isWinterMonth) {
-      minGap = WINTER_WEDNESDAY_GAP;
-    } else {
-      minGap = 0; // premier metro — no gap required, strong form data
-    }
+    // Wednesday gap — raised to 3 for Sep 2026 (was 2, still leaking -$120 in Aug)
+    // Spring Wednesday (Sep+) may improve — reduce back to 1 if results improve
+    const WEDNESDAY_GAP = isWednesday ? 3 : 0;
+    // BM66-72 specific gap — consistent drain across Jul/Aug; apply 3 minimum for metro
+    const isBM6672 = (function() {
+      const rn = ((currentRace && (currentRace.name || currentRace.raceName || '')) || '').toUpperCase();
+      const bm = rn.match(/BM(\d+)/);
+      if (bm) { const v = parseInt(bm[1]); return v >= 66 && v <= 72; }
+      return false;
+    })();
+    const BM6672_GAP = isBM6672 ? 3 : 0;
+    minGap = Math.max(WEDNESDAY_GAP, BM6672_GAP);
   } else if (isProvincial) {
     minGap = 3; // provincial — require clear standout, field quality inconsistent
   } else if (prizeMoney >= 50000) {
@@ -2086,7 +2099,16 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
     raceName.includes('2yo') || raceName.includes('3yo');
   if (isMaiden) return 'SKIP';
 
-  if (rank === 1 && odds >= 1.20 && odds <= 6 && scoreGap >= minGap) {
+  // Belmont Park volume limit — max 3 Tier A bets per day (Aug 2026: 50 bets, high volume bleeding)
+  const isBelmont = venueLower.includes('belmont park') || venueLower.includes('belmont');
+  if (isBelmont) {
+    const belmontBetsToday = (saturdayBetPool || []).filter(function(b) {
+      return (b.venueName || '').toLowerCase().includes('belmont');
+    }).length;
+    if (belmontBetsToday >= 3) return 'SKIP'; // Belmont daily limit reached
+  }
+
+  if (rank === 1 && odds >= 1.20 && scoreGap >= minGap) {
     if ((isSaturday || isWednesday) && isMetro) {
       runner._confidence = calcBetConfidence(runner);
       // Snapshot race/meeting data using currentRace/currentMeeting to avoid reference mutation
@@ -3361,6 +3383,29 @@ function addTopPick(race, runner, allRunners) {
     horseNum: String(runner.tabNo || runner.runnerNumber || ''),
     horse: runner.runnerName || runner.name || 'Unknown',
     distance: (selectedRace && selectedRace.distance) || (selectedRace && selectedRace.raceDistance) || 0,
+    raceClass: (function() {
+      const rn = ((race.name || race.raceName || selectedRace && selectedRace.name || '') + ' ' +
+                  (race.raceClass || selectedRace && selectedRace.raceClass || '')).toUpperCase();
+      if (rn.includes('MAIDEN') || rn.includes('MDN')) return 'Maiden';
+      if (rn.includes('CLASS 1') || rn.includes('CL1')) return 'Class 1';
+      if (rn.includes('CLASS 2') || rn.includes('CL2')) return 'Class 2';
+      if (rn.includes('CLASS 3') || rn.includes('CL3')) return 'Class 3';
+      const bm = rn.match(/BM(\d+)/);
+      if (bm) {
+        const v = parseInt(bm[1]);
+        if (v <= 56) return 'BM50-56';
+        if (v <= 64) return 'BM58-64';
+        if (v <= 72) return 'BM66-72';
+        if (v <= 80) return 'BM74-80';
+        return 'BM82+';
+      }
+      if (rn.includes('GROUP 1') || rn.includes('G1 ')) return 'Group 1';
+      if (rn.includes('GROUP 2') || rn.includes('G2 ')) return 'Group 2';
+      if (rn.includes('GROUP 3') || rn.includes('G3 ')) return 'Group 3';
+      if (rn.includes('LISTED')) return 'Listed';
+      if (rn.includes('HCP') || rn.includes('HANDICAP')) return 'Handicap';
+      return '';
+    })(),
     runnerId: runner.runnerId || runner.runnerName,
     algoScore: myScore,
     scoreGap: scoreGap,
