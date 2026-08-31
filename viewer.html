@@ -320,6 +320,10 @@
     .runners-table th:nth-child(6),
     .runners-table td:nth-child(6) { display: none; } /* hide EV col */
   }
+  /* Viewer mode — hide settings modal and pin buttons */
+  #settingsModal { display: none !important; }
+  .pin-btn { display: none !important; }
+  #settingsBtn { display: none !important; }
 </style>
 </head>
 <body>
@@ -2826,7 +2830,7 @@ function renderMain(race, runners) {
 // ─── LOAD RACES ─────────────────────────────────────────────
 async function loadTodaysRaces() {
   if (!config.pfKey) {
-    document.getElementById('settingsModal').classList.remove('hidden');
+    // viewer mode — settings modal always hidden
     showToast('Please enter your API keys first', 'error');
     return;
   }
@@ -3240,7 +3244,7 @@ async function manualRefreshOdds() {
 // ─── SETTINGS ───────────────────────────────────────────────
 document.getElementById('settingsBtn').addEventListener('click', () => {
   populateSettingsForm();
-  document.getElementById('settingsModal').classList.remove('hidden');
+  // viewer mode — settings modal always hidden
 });
 document.getElementById('cancelSettings').addEventListener('click', () => {
   document.getElementById('settingsModal').classList.add('hidden');
