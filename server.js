@@ -707,13 +707,9 @@ const server = http.createServer(async (req, res) => {
 
   const pathname = reqUrl.pathname.replace(/^\//, ''); // strip leading slash
 
-  // ── GET /config — supply API keys to viewer ──────────────────────────────
-  if (pathname === 'config' || pathname === '') {
-    if (pathname === '') {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('Form Lab Proxy — OK');
-      return;
-    }
+    // ── GET /config ──────────────────────────────────────────────────────────
+  if (reqUrl.pathname === '/config') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       pfKey:     PF_KEY,
@@ -723,6 +719,9 @@ const server = http.createServer(async (req, res) => {
     }));
     return;
   }
+
+  // ── GET /status ───────────────────────────────────────────────────────────
+  if (reqUrl.pathname === '/status') {
 
   // ── GET /results ─────────────────────────────────────────────────────────
   if (pathname === 'results') {
