@@ -3808,11 +3808,12 @@ function renderTracker() {
 function exportCSV() {
   const bets = loadBets();
   if (bets.length === 0) { showToast('No bets to export', ''); return; }
-  const headers = ['Date','Track','Race','Horse','Tier','Type','Odds','Stake','EV%','Result','PnL','Timing','Distance','Notes'];
+  const headers = ['Date','Track','Race','Horse','Tier','Type','Odds','Stake','EV%','Result','PnL','Timing','Distance','Class','Notes'];
   const rows = bets.map(function(b) {
     return [b.date, b.track, 'R'+b.raceNum, (b.horseNum ? b.horseNum + '. ' : '') + b.horse, b.tier, b.betType,
       b.odds ? b.odds.toFixed(2) : '', b.stake ? b.stake.toFixed(2) : '',
-      b.ev ? (b.ev*100).toFixed(1)+'%' : '', b.result || '', b.pnl !== null ? b.pnl.toFixed(2) : '', b.timing || '', b.distance || '', (b.comment || '')].join(',');
+      b.ev ? (b.ev*100).toFixed(1)+'%' : '', b.result || '', b.pnl !== null ? b.pnl.toFixed(2) : '',
+      b.timing || '', b.distance || '', b.raceClass || '', (b.comment || '')].join(',');
   });
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
