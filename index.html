@@ -2039,21 +2039,18 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
-  // SA state override — 0W from 13 bets Aug 2026. Gap raised to 6 for Sep 2026.
-  // Morphettville Parks excluded entirely (0W/12 bets Aug 2026) — re-enable for spring carnival
-  const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
-  const isMorphParks = venueLower.includes('morphettville parks') || venueLower.includes('morphettville park');
-  if (isMorphParks) return 'SKIP';
-  const SA_MIN_GAP = 6;
-  const isSAVenue = (function() {
-    return venueLower.includes('morphettville') || venueLower.includes('gawler') || venueLower.includes('balaklava') ||
-           venueLower.includes('murray bridge') || venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
-           venueLower.includes('naracoorte') || venueLower.includes('port augusta');
-  })();
+  // SA racing — spring 2026 update: tracks improved, restrictions eased
+  // Metro/Provincial SA (Morphettville, Morphettville Parks, Murray Bridge): gap 3
+  // Country SA (Gawler, Balaklava, Strathalbyn, Mt Gambier): gap 4
+  const isSAMetro = venueLower.includes('morphettville') || venueLower.includes('murray bridge');
+  const isSACountry = venueLower.includes('gawler') || venueLower.includes('balaklava') ||
+                      venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
+                      venueLower.includes('naracoorte') || venueLower.includes('port augusta');
+  const isSAVenue = isSAMetro || isSACountry;
 
   let minGap;
   if (isSAVenue) {
-    minGap = SA_MIN_GAP; // SA — all track types require clear standout
+    minGap = isSAMetro ? 3 : 4; // metro/provincial SA: 3, country SA: 4
   } else if (isMetro) {
     // Wednesday gap raised to 3 for Sep 2026 (was 2, still -$120 in Aug)
     // Reduce back to 1 if spring Wednesday results improve
