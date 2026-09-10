@@ -2039,9 +2039,10 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
-  // SA racing — spring 2026 update: tracks improved, restrictions eased
+  // SA racing — spring 2026: tracks improved, Parks re-enabled, gaps eased
   // Metro/Provincial SA (Morphettville, Morphettville Parks, Murray Bridge): gap 3
   // Country SA (Gawler, Balaklava, Strathalbyn, Mt Gambier): gap 4
+  const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
   const isSAMetro = venueLower.includes('morphettville') || venueLower.includes('murray bridge');
   const isSACountry = venueLower.includes('gawler') || venueLower.includes('balaklava') ||
                       venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
