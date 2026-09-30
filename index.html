@@ -2063,13 +2063,13 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   } else if (isProvincial) {
     minGap = 3; // provincial — require clear standout, field quality inconsistent
   } else if (prizeMoney >= 50000) {
-    minGap = 2; // stakes/listed/group country — small gap ok
+    minGap = 5; // stakes/listed country — still need standout in spring fields
   } else if (prizeMoney >= 25000) {
-    minGap = 3; // BM70+ country — moderate gap
+    minGap = 5; // BM70+ country — spring gap minimum
   } else if (prizeMoney >= 15000) {
-    minGap = 4; // BM58-BM66 country — stronger gap needed
+    minGap = 5; // BM58-BM66 country — stronger gap needed
   } else {
-    minGap = 5; // low class country — need clear standout
+    minGap = 5; // low class country — clear standout required
   }
   // Exclude maiden races from A tier — low win rate confirmed over 2 weeks of data
   // Use currentRace (passed in) not selectedRace — selectedRace may lag behind during scoring
@@ -2088,7 +2088,7 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   }
 
   if (rank === 1 && odds >= 1.20 && scoreGap >= minGap) {
-    if ((isSaturday || isWednesday) && isMetro) {
+    if (isMetro) {
       runner._confidence = calcBetConfidence(runner);
       // Snapshot race/meeting data using currentRace/currentMeeting to avoid reference mutation
       saturdayBetPool.push({
@@ -2105,8 +2105,9 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
     return 'A';
   }
 
-  // B tier — disabled by default, enabled via Settings during carnivals (Spring, Everest etc)
-  if (config.bTierEnabled && isMetro && (isSaturday || isWednesday) && rank === 2 && odds >= 4 && odds <= 7) {
+  // B tier — spring carnival: enabled on ALL metro days (not just Sat/Wed)
+  // Covers Group/Listed races on any weekday metro during spring
+  if (config.bTierEnabled && isMetro && rank === 2 && odds >= 4 && odds <= 6) {
     runner._confidence = calcBetConfidence(runner);
     saturdayBetPool.push({
       runner: Object.assign({}, runner),
@@ -2497,7 +2498,7 @@ async function loadRaceRunners(meeting, race, meetingData) {
     runners.forEach(function(r) {
       if (r.tier && r.tier !== 'SKIP' && r.bfOdds) {
         logBetRecommendation(fullRace, r);
-        sendDiscordAlert(fullRace, r, false); // new recommendation
+        // Discord auto-alert removed — use Send Summary button manually
       }
     });
 
@@ -3218,7 +3219,7 @@ async function refreshOddsOnly() {
         if (r.tier && r.tier !== 'SKIP' && r.bfOdds) {
           const wasNew = logBetRecommendation(selectedRace, r);
           if (wasNew === true) {
-            sendDiscordAlert(selectedRace, r, false);
+            // Discord auto-alert removed
           }
         }
       });
