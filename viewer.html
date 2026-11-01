@@ -614,9 +614,9 @@
             <th>Tier</th>
             <th>Type</th>
             <th>Odds</th>
-      <th title="FormFav data">FF</th>
             <th>Stake</th>
             <th>Dist</th>
+            <th>Class</th>
             <th>EV%</th>
             <th>Result</th>
             <th>P&amp;L</th>
@@ -626,7 +626,7 @@
           </tr>
         </thead>
         <tbody id="betsBody">
-          <tr><td colspan="12" class="no-bets-msg">No bets logged yet. Load a race to see recommendations — they'll be auto-logged here.</td></tr>
+          <tr><td colspan="16" class="no-bets-msg">No bets logged yet. Load a race to see recommendations — they'll be auto-logged here.</td></tr>
         </tbody>
       </table>
     </div>
@@ -2069,7 +2069,7 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
   // SA racing — Nov 2026: Morphettville 3W from 17 in Oct, gap back to 4
-  // Morphettville + Morphettville Parks: gap 4 | Murray Bridge: gap 3
+  // Morphettville, Morphettville Parks, Murray Bridge: gap 4
   // Country SA (Gawler, Balaklava, Strathalbyn, Mt Gambier): gap 4
   const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
   const isMorphettville = venueLower.includes('morphettville');
@@ -2081,7 +2081,7 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
 
   let minGap;
   if (isSAVenue) {
-    minGap = isMorphettville ? 4 : (isSAMetro ? 3 : 4); // Morphettville/Parks 4, Murray Bridge 3, country SA 4
+    minGap = 4; // all SA tracks: Morphettville, Morphettville Parks, Murray Bridge and country SA
   } else if (isMetro) {
     // Wednesday gap raised to 3 for Sep 2026 (was 2, still -$120 in Aug)
     // Reduce back to 1 if spring Wednesday results improve
@@ -3796,7 +3796,7 @@ function renderTracker() {
   // Render bets table
   const tbody = document.getElementById('betsBody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" class="no-bets-msg">No bets logged for this filter yet.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="16" class="no-bets-msg">No bets logged for this filter yet.</td></tr>';
     return;
   }
 
@@ -3818,6 +3818,7 @@ function renderTracker() {
       '<td style="font-family:DM Mono,monospace;color:var(--gold)">' + (bet.odds ? bet.odds.toFixed(2) : '—') + '</td>' +
       '<td style="font-family:DM Mono,monospace">$' + (bet.stake ? bet.stake.toFixed(2) : '0.00') + '</td>' +
       '<td style="font-size:11px;color:var(--text2)">' + (bet.distance ? bet.distance + 'm' : '—') + '</td>' +
+      '<td style="font-size:11px;color:var(--text2);white-space:nowrap">' + (bet.raceClass || '—') + '</td>' +
       '<td style="font-family:DM Mono,monospace;font-size:11px;color:' + (bet.ev > 0 ? 'var(--green)' : 'var(--text3)') + '">' +
         (bet.ev ? (bet.ev > 0 ? '+' : '') + (bet.ev * 100).toFixed(1) + '%' : '—') + '</td>' +
       '<td>' +
