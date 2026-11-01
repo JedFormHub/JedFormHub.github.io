@@ -709,6 +709,34 @@ const PROVINCIAL_TRACKS = [
   'darwin', 'hobart', 'launceston', 'canberra',
 ];
 
+// Classify a race into a reporting band from PF raceClass text and/or race name
+function classifyRaceClass(raceName, raceClassText) {
+  const t = ((raceClassText || '') + ' ' + (raceName || '')).toUpperCase();
+  if (!t.trim()) return '';
+  if (/GROUP\s*1|\bG1\b/.test(t)) return 'Group 1';
+  if (/GROUP\s*2|\bG2\b/.test(t)) return 'Group 2';
+  if (/GROUP\s*3|\bG3\b/.test(t)) return 'Group 3';
+  if (/LISTED|\bLR\b/.test(t)) return 'Listed';
+  if (/MAIDEN|\bMDN\b/.test(t)) return 'Maiden';
+  const cls = t.match(/CLASS\s*(\d)|\bCL\s*(\d)\b/);
+  if (cls) return 'Class ' + (cls[1] || cls[2]);
+  const bm = t.match(/(?:BENCHMARK|\bBM)\s*(\d{2,3})/);
+  if (bm) {
+    const v = parseInt(bm[1], 10);
+    if (v <= 56) return 'BM50-56';
+    if (v <= 64) return 'BM58-64';
+    if (v <= 72) return 'BM66-72';
+    if (v <= 80) return 'BM74-80';
+    return 'BM82+';
+  }
+  if (/RESTRICTED|\bRST\b|\bRS\d/.test(t)) return 'Restricted';
+  if (/HANDICAP|\bHCP\b/.test(t)) return 'Handicap';
+  if (/QUALITY|\bQLTY\b/.test(t)) return 'Quality';
+  if (/SET WEIGHTS|\bSW\b|WFA|WEIGHT FOR AGE/.test(t)) return 'Set Weights/WFA';
+  // fall back to the raw PF class text so nothing is left blank
+  return (raceClassText || '').replace(/;/g, '').trim();
+}
+
 function isMetroTrack(venueName) {
   const v = (venueName || '').toLowerCase();
   return METRO_TRACKS.some(function(t) { return v.includes(t); });
@@ -1782,7 +1810,8 @@ function toggleManualPin(runnerId, runnerName, raceName, venueName, raceNum, alg
         raceId: venueName + '_R' + raceNum,
         horse: runnerName,
         horseNum: String(tabNo || ''),
-        distance: 0,
+        distance: (selectedRace && (selectedRace.distance || selectedRace.raceDistance)) || 0,
+        raceClass: classifyRaceClass(raceName, (selectedRace && (selectedRace.raceClass || selectedRace.class)) || ''),
         runnerId: runnerId,
         tier: 'A',
         betType: 'WIN',
@@ -2039,11 +2068,12 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
   // A tier — #1 ranked score, odds $1.20-$6
   // Score gap filter by track type and race class
   const prizeMoney = (selectedRace && selectedRace.prizeMoney) || 0;
-  // SA racing — spring 2026: tracks improved, Parks re-enabled, gaps eased
-  // Metro/Provincial SA (Morphettville, Morphettville Parks, Murray Bridge): gap 3
+  // SA racing — Nov 2026: Morphettville 3W from 17 in Oct, gap back to 4
+  // Morphettville + Morphettville Parks: gap 4 | Murray Bridge: gap 3
   // Country SA (Gawler, Balaklava, Strathalbyn, Mt Gambier): gap 4
   const venueLower = ((currentMeeting && currentMeeting.venueName) || '').toLowerCase();
-  const isSAMetro = venueLower.includes('morphettville') || venueLower.includes('murray bridge');
+  const isMorphettville = venueLower.includes('morphettville');
+  const isSAMetro = isMorphettville || venueLower.includes('murray bridge');
   const isSACountry = venueLower.includes('gawler') || venueLower.includes('balaklava') ||
                       venueLower.includes('strathalbyn') || venueLower.includes('mt gambier') ||
                       venueLower.includes('naracoorte') || venueLower.includes('port augusta');
@@ -2051,7 +2081,7 @@ function getRecommendation(runner, allRunners, raceOverride, meetingOverride) {
 
   let minGap;
   if (isSAVenue) {
-    minGap = isSAMetro ? 3 : 4; // metro/provincial SA: 3, country SA: 4
+    minGap = isMorphettville ? 4 : (isSAMetro ? 3 : 4); // Morphettville/Parks 4, Murray Bridge 3, country SA 4
   } else if (isMetro) {
     // Wednesday gap raised to 3 for Sep 2026 (was 2, still -$120 in Aug)
     // Reduce back to 1 if spring Wednesday results improve
@@ -3597,7 +3627,9 @@ function saveBets(bets) {
 function logBetRecommendation(race, runner) {
   if (!runner.tier || runner.tier === 'SKIP') return false;
   const bets = loadBets();
-  const today = new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Perth' });
+  const raceDay = race.startTime
+    ? new Date(race.startTime).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' })
+    : new Date().toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney' });
   // Avoid duplicate logging same horse at same track/race on same day
   const exists = bets.find(function(b) {
     return b.horse === (runner.runnerName || runner.name || '') &&
@@ -3606,6 +3638,10 @@ function logBetRecommendation(race, runner) {
            b.date === raceDay;
   });
   if (exists) {
+    if (!exists.raceClass) {
+      exists.raceClass = classifyRaceClass(race.name || race.raceName || '', race.raceClass || race.class || '');
+      if (exists.raceClass) saveBets(bets);
+    }
     // If pinned entry has no odds yet, update them now they've loaded
     if (exists._pinKey && exists.odds === 0 && runner.bfOdds) {
       exists.odds = runner.bfOdds;
@@ -3627,7 +3663,11 @@ function logBetRecommendation(race, runner) {
     raceId: race.raceId || race.name || '',
     horseNum: String(runner.tabNo || runner.runnerNumber || ''),
     horse: runner.runnerName || runner.name || 'Unknown',
-    distance: (selectedRace && selectedRace.distance) || (selectedRace && selectedRace.raceDistance) || 0,
+    distance: race.distance || race.raceDistance || (selectedRace && (selectedRace.distance || selectedRace.raceDistance)) || 0,
+    raceClass: classifyRaceClass(
+      race.name || race.raceName || (selectedRace && selectedRace.name) || '',
+      race.raceClass || race.class || (selectedRace && (selectedRace.raceClass || selectedRace.class)) || ''
+    ),
     runnerId: runner.runnerId || runner.runnerName,
     tier: runner.tier,
     betType: runner.betType || 'WIN',
